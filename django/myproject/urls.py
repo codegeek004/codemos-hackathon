@@ -21,4 +21,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('gmail/', include('gmailapp.urls')),
     path('accounts/', include('allauth.urls')),
+
 ]

@@ -1,9 +1,0 @@
-{% extends 'base_generic.html' %}
-
-{% block content %}
-  <h1>Confirm Email Deletion</h1>
-  <form method="post">
-    {% csrf_token %}
-    <button type="submit">Delete Emails</button>
-  </form>
-{% endblock %}

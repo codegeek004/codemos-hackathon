@@ -1,0 +1,11 @@
+<form method="POST" action="{% url 'delete_emails' %}">
+  {% csrf_token %}
+  <label for="category">Choose Email Category to Delete:</label>
+  <select name="category" id="category">
+    <option value="CATEGORY_PROMOTIONS">Promotions</option>
+    <option value="CATEGORY_SOCIAL">Social</option>
+    <option value="CATEGORY_UPDATES">Updates</option>
+    <option value="CATEGORY_FORUMS">Forums</option>
+  </select>
+  <button type="submit">Delete Emails</button>
+</form>
