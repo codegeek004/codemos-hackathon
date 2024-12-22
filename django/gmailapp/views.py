@@ -1,60 +1,75 @@
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
-from google.auth.transport.requests import Request
-from allauth.socialaccount.models import SocialAccount, SocialToken
+from django.shortcuts import render
 from django.http import HttpResponse
-from django.contrib.auth.decorators import login_required
-from .utils import delete_emails
+from googleapiclient.discovery import build
+from google.oauth2.credentials import Credentials
 
-@login_required
 def delete_emails_view(request):
-    """
-    View to delete emails from the authenticated user's Gmail account.
-    """
+    if request.method == "GET":
+        # Render the email deletion form
+        return render(request, "email_delete_form.html")  # Ensure this template exists in your templates directory
+
+    if request.method == "POST":
+        # Get the selected category from the form
+        category = request.POST.get("category")
+
+        # Ensure category is valid
+        valid_categories = [
+            "CATEGORY_PROMOTIONS",
+            "CATEGORY_SOCIAL",
+            "CATEGORY_UPDATES",
+            "CATEGORY_FORUMS",
+        ]
+        if category not in valid_categories:
+            return HttpResponse("Invalid category selected.", status=400)
+
+        try:
+            # Retrieve stored credentials (replace this with your own logic)
+            creds = retrieve_credentials_for_user(request.user)
+
+            # Build the Gmail API service
+            service = build("gmail", "v1", credentials=creds)
+
+            # Query emails in the specified category
+            query = f"category:{category.split('_')[1].lower()}"
+            results = service.users().messages().list(userId="me", q=query).execute()
+            messages = results.get("messages", [])
+
+            if not messages:
+                return HttpResponse(f"No emails found in the {category} category.", status=200)
+
+            # Delete emails in a loop
+            for message in messages:
+                service.users().messages().delete(userId="me", id=message["id"]).execute()
+
+            return HttpResponse(f"Deleted {len(messages)} emails in the {category} category.", status=200)
+
+        except Exception as e:
+            return HttpResponse(f"An error occurred: {e}", status=500)
+
+
+
+from allauth.socialaccount.models import SocialAccount, SocialToken
+
+def retrieve_credentials_for_user(user):
     try:
-        print('i am in try')
-        print('user', request.user)
+        # Get the social account for the user
+        social_account = SocialAccount.objects.get(user=user, provider="google")
+        
+        # Get the associated social token
+        social_token = SocialToken.objects.get(account=social_account)
+        
+        # Build the credentials
+        from google.oauth2.credentials import Credentials
 
-        # Retrieve the linked Google account
-        social_accounts = SocialAccount.objects.filter(user=request.user, provider='google')
-        if not social_accounts.exists():
-            return HttpResponse("No Google account linked for the user.", status=400)
-
-        for social_account in social_accounts: 
-            social_tokens = social_account.socialtoken_set.all()
-            print('social_token', social_tokens)
-            if social_tokens.exists():
-                for social_token in social_tokens:
-                    print(f"Access Token: {social_token.token}")
-                    print(f"Refresh Token: {social_token.token_secret}")
-                    
-                    # Create credentials using the token
-                    creds = Credentials(
-                        token=social_token.token,
-                        refresh_token=social_token.token_secret,
-                        token_uri='https://oauth2.googleapis.com/token',
-                        client_id='99034799467-m8dh7cdtpfquud1jvt21eup1t5vuk7fv.apps.googleusercontent.com',  # Replace with actual client ID
-                        client_secret='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'  # Replace with actual client secret
-                    )
-
-                    # Refresh the token if expired
-                    if creds and creds.expired and creds.refresh_token:
-                        creds.refresh(Request())
-
-                    # Build the Gmail service
-                    service = build('gmail', 'v1', credentials=creds)
-
-                    # Call the function to delete emails
-                    result = delete_emails(service)
-
-                    if not result:
-                        return HttpResponse("No emails found to delete.", status=404)
-
-                    return HttpResponse(result)  # Return result after deletion
-
-        return HttpResponse("No valid Google token found for the user.", status=400) 
-
+        creds = Credentials(
+            token=social_token.token,
+            refresh_token=social_token.token_secret,
+            token_uri="https://oauth2.googleapis.com/token",
+            client_id="your-client-id.apps.googleusercontent.com",
+            client_secret="your-client-secret",
+        )
+        return creds
     except SocialAccount.DoesNotExist:
-        return HttpResponse("Google account not linked.", status=400)
-    except Exception as e:
-        return HttpResponse(f"An error occurred: {e}", status=500)
+        raise Exception("Google account not linked to this user.")
+    except SocialToken.DoesNotExist:
+        raise Exception("No Google token found for this user.")
