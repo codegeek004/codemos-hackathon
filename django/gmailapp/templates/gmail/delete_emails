@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Emails</title>
+</head>
+<body>
+    <h1>Delete Emails</h1>
+    
+    <form action="{% url 'delete_emails' %}" method="POST">
+        {% csrf_token %}
+        <button type="submit">Delete All Emails in Social Category</button>
+    </form>
+</body>
+</html>

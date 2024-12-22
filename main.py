@@ -12,7 +12,7 @@ SCOPES = ['https://mail.google.com/']
 
 def authenticate_gmail():
     """
-    Authenticate and return the Gmail API service.
+    Authenticate and return credentials for Gmail API.
     """
     creds = None
     # Check if token.pickle already exists (for reauthentication)
@@ -24,13 +24,16 @@ def authenticate_gmail():
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            print(f"Requesting the following scopes: {SCOPES}")
+            if not os.path.exists('credentials.json'):
+                print("Error: 'credentials.json' file not found. Ensure it exists in the same directory.")
+                exit(1)
             flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
-            creds = flow.run_local_server(port=8080)  # Use a fixed port
-        # Save the credentials for next time
+            creds = flow.run_local_server(port=8080)  # Defaults to 'localhost')
+        # Save the credentials for reuse
         with open('token.pickle', 'wb') as token:
             pickle.dump(creds, token)
     return creds
+
 
 
 def connect_to_gmail():
@@ -106,12 +109,17 @@ def delete_emails_batch(service, message_ids):
 
 def main():
     """
-    Main function to delete Gmail emails by category or all emails.
+    Main function to delete Gmail emails by category or all emails for a specified user.
     """
     print("Starting script...")
     service = connect_to_gmail()
     print("Connected to Gmail.")
     
+    # Ask the user to specify the Gmail account
+    user_id = input("Enter the Gmail account to target (or leave empty for 'me'): ").strip()
+    if not user_id:
+        user_id = 'me'  # Default to the authenticated user
+
     # Ask the user which category to target
     category = input("Which category would you like to delete? (social/promotions/forums/updates/all): ").strip().lower()
 
@@ -135,7 +143,7 @@ def main():
     messages = []
     page_token = None
     while True:
-        results = service.users().messages().list(userId='me', q=query, pageToken=page_token, maxResults=500).execute()
+        results = service.users().messages().list(userId=user_id, q=query, pageToken=page_token, maxResults=500).execute()
         messages.extend(results.get('messages', []))
         page_token = results.get('nextPageToken')
         if not page_token:
@@ -148,19 +156,19 @@ def main():
         return
 
     # Step 2: Confirm before deletion
-    confirm = input(f"Are you sure you want to delete {len(messages)} emails in the '{category}' category? (yes/no): ").strip().lower()
+    confirm = input(f"Are you sure you want to delete {len(messages)} emails in the '{category}' category for user '{user_id}'? (yes/no): ").strip().lower()
     if confirm != 'yes':
         print("Operation canceled.")
         return
 
     # Step 3: Delete emails in batches of 1000
-    batch_size = 2000
+    batch_size = 1000
     for i in range(0, len(messages), batch_size):
         batch = messages[i:i + batch_size]
         message_ids = [msg['id'] for msg in batch]
         delete_emails_batch(service, message_ids)
 
-    print(f"All emails in the '{category}' category processed successfully!")
+    print(f"All emails in the '{category}' category processed successfully for user '{user_id}'!")
 
 
 if __name__ == '__main__':
