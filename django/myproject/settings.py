@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure--86oenvzrsktb1^m$w+f85we_z%#hc-kk9#-__h_)l0e&0h$q+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'localhost:8000']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'localhost:8000', '*']
 
 
 
@@ -174,6 +174,14 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 #         },
 #     },
 # }
+
+
 SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE =False
 CSRF_COOKIE_HTTPONLY = True
+ # Set to True in production
+SESSION_COOKIE_SECURE = False  # Set to True in production
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:8000',
+]
+

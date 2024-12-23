@@ -5,14 +5,10 @@ from google.oauth2.credentials import Credentials
 
 def delete_emails_view(request):
     if request.method == "GET":
-        # Render the email deletion form
-        return render(request, "email_delete_form.html")  # Ensure this template exists in your templates directory
+        return render(request, "email_delete_form.html")
 
     if request.method == "POST":
-        # Get the selected category from the form
         category = request.POST.get("category")
-
-        # Ensure category is valid
         valid_categories = [
             "CATEGORY_PROMOTIONS",
             "CATEGORY_SOCIAL",
@@ -23,25 +19,34 @@ def delete_emails_view(request):
             return HttpResponse("Invalid category selected.", status=400)
 
         try:
-            # Retrieve stored credentials (replace this with your own logic)
             creds = retrieve_credentials_for_user(request.user)
-
-            # Build the Gmail API service
             service = build("gmail", "v1", credentials=creds)
 
-            # Query emails in the specified category
             query = f"category:{category.split('_')[1].lower()}"
-            results = service.users().messages().list(userId="me", q=query).execute()
-            messages = results.get("messages", [])
+            deleted_count = 0
+            page_token = None
 
-            if not messages:
-                return HttpResponse(f"No emails found in the {category} category.", status=200)
+            while True:
+                # Fetch emails in batches
+                results = service.users().messages().list(
+                    userId="me", q=query, pageToken=page_token
+                ).execute()
 
-            # Delete emails in a loop
-            for message in messages:
-                service.users().messages().delete(userId="me", id=message["id"]).execute()
+                messages = results.get("messages", [])
+                if not messages:
+                    break  # Exit loop if no messages are left
 
-            return HttpResponse(f"Deleted {len(messages)} emails in the {category} category.", status=200)
+                # Delete each email in the batch
+                for message in messages:
+                    service.users().messages().delete(userId="me", id=message["id"]).execute()
+                    deleted_count += 1
+
+                # Get the next page token, if available
+                page_token = results.get("nextPageToken")
+                if not page_token:
+                    break  # Exit loop if there are no more pages
+
+            return HttpResponse(f"Deleted {deleted_count} emails in the {category} category.", status=200)
 
         except Exception as e:
             return HttpResponse(f"An error occurred: {e}", status=500)
