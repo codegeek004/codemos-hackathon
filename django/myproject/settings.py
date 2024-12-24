@@ -106,7 +106,8 @@ SOCIALACCOUNT_PROVIDERS = {
             'secret': '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',
             'key': ''
         }
-    }
+    }   
+    
 }
 
 
