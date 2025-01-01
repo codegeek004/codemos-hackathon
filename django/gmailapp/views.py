@@ -1,9 +1,19 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
+from django.contrib import messages
+
+
+def index_view(request):
+    return render(request, 'index.html')
 
 def delete_emails_view(request):
+    if not request.user.is_authenticated:
+        messages.error(request, "You are not logged in. Please login to continue.")
+        print("Message added:", messages.get_messages(request))
+        return redirect('index')
+
     if request.method == "GET":
         return render(request, "email_delete_form.html")
 
@@ -32,12 +42,12 @@ def delete_emails_view(request):
                     userId="me", q=query, pageToken=page_token
                 ).execute()
 
-                messages = results.get("messages", [])
-                if not messages:
+                messages_list = results.get("messages", [])
+                if not messages_list:
                     break  # Exit loop if no messages are left
 
                 # Delete each email in the batch
-                for message in messages:
+                for message in messages_list:
                     service.users().messages().delete(userId="me", id=message["id"]).execute()
                     deleted_count += 1
 
@@ -50,8 +60,6 @@ def delete_emails_view(request):
 
         except Exception as e:
             return HttpResponse(f"An error occurred: {e}", status=500)
-
-
 
 from allauth.socialaccount.models import SocialAccount, SocialToken
 
