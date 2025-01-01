@@ -9,12 +9,14 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
-
+import os
 from pathlib import Path
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+STATIC_ROOT = os.path.join(PROJECT_DIR, 'static')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -38,12 +40,19 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    #my apps
     'gmailapp',
+    #allauth
+    "allauth_ui",
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
-    'sslserver'
+    "widget_tweaks",
+    "slippers",
+    #https
+    'sslserver',
+
 ]
 SOCIALACCOUNT_STORE_TOKENS = True
 
@@ -102,8 +111,11 @@ SOCIALACCOUNT_PROVIDERS = {
         },
         'OAUTH_PKCE_ENABLED': True,
         'APP': {
-            'client_id': '99034799467-hl9dbl4t4l64gftesd8bokb1no6kbgu3.apps.googleusercontent.com',
-            'secret': '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',
+            # 'client_id': '99034799467-hl9dbl4t4l64gftesd8bokb1no6kbgu3.apps.googleusercontent.com',
+            # 'secret': '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',
+            # for local development
+            'client_id': '99034799467-6l1lm0l6b80h2bcmon2i8st2odg778nj.apps.googleusercontent.com',
+            'secret': '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',
             'key': ''
         }
     }   
@@ -113,7 +125,7 @@ SOCIALACCOUNT_PROVIDERS = {
 
 LOGIN_REDIRECT_URL = '/gmail/'
 
-
+STATICFILES_DIRS =[BASE_DIR / "static"]
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -190,4 +202,5 @@ SESSION_COOKIE_SECURE = False  # Set to True in production
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:8000',
 ]
+
 
