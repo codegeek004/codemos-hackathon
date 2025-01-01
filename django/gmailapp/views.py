@@ -60,7 +60,16 @@ def delete_emails_view(request):
 
                 # Delete each email in the batch
                 for message in messages_list:
-                    service.users().messages().delete(userId="me", id=message["id"]).execute()
+                    #deletes permanently
+                    # service.users().messages().delete(userId="me", id=message["id"]).execute()
+                    #adds to trash
+                    service.users().messages().modify(
+                        userId="me", 
+                        id=message["id"],
+                        body={
+                            "removeLabelIds":"INBOX",
+                            "addLabelIds":["TRASH"]
+                        }).execute()
                     deleted_count += 1
 
                 # Get the next page token, if available
