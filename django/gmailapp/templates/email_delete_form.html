@@ -10,6 +10,8 @@
     </ul>
 {% endif %}
   <br><br><h1 style="text-align: center;">Delete your emails</h3>
+    <a href="{% url 'recover_emails' %}" class="btn btn-primary">Recover Deleted Emails</a>
+
     <form method="POST" action="{% url 'delete_emails' %}">
       {% csrf_token %}
       <br><br><h5 style="text-align:center">Choose Category</h5><br><br>
