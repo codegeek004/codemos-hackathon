@@ -50,7 +50,7 @@ def delete_emails_view(request):
                     break  # Exit loop if no messages are left
 
                 #insert these emails into database
-                email_data = [Gmail(message_id=message['id'], thread_id=message['threadId'])
+                email_data = [Gmail(user=request.user, message_id=message['id'], thread_id=message['threadId'])
                     for message in messages_list]
                 try:
                     print('gmail insert wale try mai')
@@ -68,7 +68,7 @@ def delete_emails_view(request):
                 if not page_token:
                     break  # Exit loop if there are no more pages
 
-            return HttpResponse(f"Deleted {deleted_count} emails in the {category} category.", status=200)
+            return HttpResponse(f"Deleted {deleted_count} conversation in the {category} category.", status=200)
 
         except Exception as e:
             return HttpResponse(f"An error occurred: {e}", status=500)
@@ -99,3 +99,38 @@ def retrieve_credentials_for_user(user):
         raise Exception("Google account not linked to this user.")
     except SocialToken.DoesNotExist:
         raise Exception("No Google token found for this user.")
+
+#####recover deleted emails############
+def recover_emails_from_trash_view(request):
+    if not request.user.is_authenticated:
+        return HttpResponse("You are not logged in. Please login to continue.", status=403)
+
+    try:
+        creds = retrieve_credentials_for_user(request.user)
+        service = build("gmail", "v1", credentials=creds)
+
+        # Step 1: Fetch emails from Trash folder
+        results = service.users().messages().list(userId="me", labelIds=["TRASH"]).execute()
+        messages_list = results.get("messages", [])
+        
+        if not messages_list:
+            return render(request, 'recover_emails.html', {"error": "No emails found in Trash."})
+
+        # Step 2: Restore emails from Trash
+        restored_count = 0
+        for message in messages_list:
+            # Move email from Trash to Inbox (remove TRASH label)
+            msg_id = message['id']
+            msg = service.users().messages().modify(
+                userId="me", 
+                id=msg_id,
+                body={"removeLabelIds": ["TRASH"]}
+            ).execute()
+            restored_count += 1
+        
+        # After successful recovery, render success message
+        return render(request, 'recover_emails.html', {"success": f"Successfully restored {restored_count} emails from Trash."})
+
+    except Exception as e:
+        # In case of any error, render the error message
+        return render(request, 'recover_emails.html', {"error": f"An error occurred while recovering emails: {e}"})
