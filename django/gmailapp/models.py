@@ -1,12 +1,12 @@
 from django.db import models
 from django.contrib.auth.models import User
-
-class GoogleToken(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    access_token = models.CharField(max_length=255)
-    refresh_token = models.CharField(max_length=255)
-    expires_in = models.IntegerField()
-    token_type = models.CharField(max_length=50)
+print('models file initiated')
+class Gmail(models.Model):
+    print('gmail models loaded')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    message_id = models.CharField(max_length=1000)
+    thread_id = models.CharField(max_length=1000)
 
     def __str__(self):
-        return f"{self.user.username}'s Google Token"
+        return self.message_id
+

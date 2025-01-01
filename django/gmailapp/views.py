@@ -3,6 +3,7 @@ from django.http import HttpResponse
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 from django.contrib import messages
+from .models import Gmail
 
 
 def index_view(request):
@@ -41,10 +42,21 @@ def delete_emails_view(request):
                 results = service.users().messages().list(
                     userId="me", q=query, pageToken=page_token
                 ).execute()
-
+                print('results', results)
                 messages_list = results.get("messages", [])
+                print(messages_list, 'messages_list')
+
                 if not messages_list:
                     break  # Exit loop if no messages are left
+
+                #insert these emails into database
+                email_data = [Gmail(message_id=message['id'], thread_id=message['threadId'])
+                    for message in messages_list]
+                try:
+                    print('gmail insert wale try mai')
+                    Gmail.objects.bulk_create(email_data)
+                except Exception as e:
+                    print(f'Gmail Insertion Error: {e}')
 
                 # Delete each email in the batch
                 for message in messages_list:
@@ -81,6 +93,7 @@ def retrieve_credentials_for_user(user):
             client_id="your-client-id.apps.googleusercontent.com",
             client_secret="your-client-secret",
         )
+
         return creds
     except SocialAccount.DoesNotExist:
         raise Exception("Google account not linked to this user.")

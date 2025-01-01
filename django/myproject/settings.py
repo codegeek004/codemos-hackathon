@@ -15,8 +15,6 @@ from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
-STATIC_ROOT = os.path.join(PROJECT_DIR, 'static')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -65,6 +63,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "allauth.account.middleware.AccountMiddleware", 
+
 ]
 
 ROOT_URLCONF = 'myproject.urls'
@@ -123,7 +122,7 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 
-LOGIN_REDIRECT_URL = '/gmail/'
+LOGIN_REDIRECT_URL = '/gmail/delete_emails/'
 
 STATICFILES_DIRS =[BASE_DIR / "static"]
 
@@ -164,34 +163,16 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
-
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+STATIC_ROOT = BASE_DIR / "staticfiles"
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / "static"]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
-# LOGGING = {
-#     'version': 1,
-#     'disable_existing_loggers': False,
-#     'handlers': {
-#         'console': {
-#             'class': 'logging.StreamHandler',
-#         },
-#     },
-#     'loggers': {
-#         'django': {
-#             'handlers': ['console'],
-#             'level': 'DEBUG',
-#         },
-#         'allauth': {
-#             'handlers': ['console'],
-#             'level': 'DEBUG',
-#         },
-#     },
-# }
 
 
 SESSION_COOKIE_SECURE = True
@@ -202,5 +183,6 @@ SESSION_COOKIE_SECURE = False  # Set to True in production
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:8000',
 ]
+
 
 
