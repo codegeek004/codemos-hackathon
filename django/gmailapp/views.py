@@ -12,7 +12,6 @@ def index_view(request):
 def delete_emails_view(request):
     if not request.user.is_authenticated:
         messages.error(request, "You are not logged in. Please login to continue.")
-        print("Message added:", messages.get_messages(request))
         return redirect('index')
 
     if request.method == "GET":
@@ -42,9 +41,7 @@ def delete_emails_view(request):
                 results = service.users().messages().list(
                     userId="me", q=query, pageToken=page_token
                 ).execute()
-                print('results', results)
                 messages_list = results.get("messages", [])
-                print(messages_list, 'messages_list')
 
                 if not messages_list:
                     messages.warning(request, f"There are no emails in {category}")
@@ -83,7 +80,6 @@ def delete_emails_view(request):
 
         except Exception as e:
             messages.warning(request, f"Something went wrong")
-            print('errro is', e)
             return redirect('delete_emails')
 
 from allauth.socialaccount.models import SocialAccount, SocialToken
