@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 from django.contrib import messages
-from .models import Gmail
+
 
 
 def index_view(request):
@@ -47,16 +47,17 @@ def delete_emails_view(request):
                 print(messages_list, 'messages_list')
 
                 if not messages_list:
+                    messages.warning(request, f"There are no emails in {category}")
                     break  # Exit loop if no messages are left
 
-                #insert these emails into database
-                email_data = [Gmail(user=request.user, message_id=message['id'], thread_id=message['threadId'])
-                    for message in messages_list]
-                try:
-                    print('gmail insert wale try mai')
-                    Gmail.objects.bulk_create(email_data)
-                except Exception as e:
-                    print(f'Gmail Insertion Error: {e}')
+                # #insert these emails into database
+                # email_data = [Gmail(user=request.user, message_id=message['id'], thread_id=message['threadId'])
+                #     for message in messages_list]
+                # try:
+                #     print('gmail insert wale try mai')
+                #     Gmail.objects.bulk_create(email_data)
+                # except Exception as e:
+                #     print(f'Gmail Insertion Error: {e}')
 
                 # Delete each email in the batch
                 for message in messages_list:
@@ -69,7 +70,7 @@ def delete_emails_view(request):
                         body={
                             "removeLabelIds":"INBOX",
                             "addLabelIds":["TRASH"]
-                        }).execute()
+                        }).execute()    
                     deleted_count += 1
 
                 # Get the next page token, if available
@@ -77,10 +78,13 @@ def delete_emails_view(request):
                 if not page_token:
                     break  # Exit loop if there are no more pages
 
-            return HttpResponse(f"Deleted {deleted_count} conversation in the {category} category.", status=200)
+            messages.success(request, f"Deleted {deleted_count} conversations in the {category} category")
+            return redirect('delete_emails')
 
         except Exception as e:
-            return HttpResponse(f"An error occurred: {e}", status=500)
+            messages.warning(request, f"Something went wrong")
+            print('errro is', e)
+            return redirect('delete_emails')
 
 from allauth.socialaccount.models import SocialAccount, SocialToken
 
