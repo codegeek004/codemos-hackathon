@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure--86oenvzrsktb1^m$w+f85we_z%#hc-kk9#-__h_)l0e&0h$q+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'localhost:8000', '*']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'localhost:8000', '*', '44.196.64.149']
 
 
 
@@ -94,12 +94,14 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'gmail',
+        'USER': 'ajay',
+        'PASSWORD': 'Root@123',  # Use the correct password you set
         'HOST': 'localhost',
-        'USER': 'root',
-        'PASSWORD': 'root',
         'PORT': 3306,
     }
 }
+
+
 
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
@@ -166,7 +168,9 @@ USE_TZ = True
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATIC_URL = 'static/'
+<<<<<<< HEAD
 STATICFILES_DIRS = [BASE_DIR / "static"]
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -182,7 +186,7 @@ CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SECURE = False  # Set to True in production
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:8000',
-]
+    ]
 
 
 
