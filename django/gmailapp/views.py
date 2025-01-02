@@ -1,9 +1,20 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
+from django.contrib import messages
+
+
+
+def index_view(request):
+    return render(request, 'index.html')
 
 def delete_emails_view(request):
+    if not request.user.is_authenticated:
+        messages.error(request, "You are not logged in. Please login to continue.")
+        print("Message added:", messages.get_messages(request))
+        return redirect('index')
+
     if request.method == "GET":
         return render(request, "email_delete_form.html")
 
@@ -31,14 +42,35 @@ def delete_emails_view(request):
                 results = service.users().messages().list(
                     userId="me", q=query, pageToken=page_token
                 ).execute()
+                print('results', results)
+                messages_list = results.get("messages", [])
+                print(messages_list, 'messages_list')
 
-                messages = results.get("messages", [])
-                if not messages:
+                if not messages_list:
+                    messages.warning(request, f"There are no emails in {category}")
                     break  # Exit loop if no messages are left
 
+                # #insert these emails into database
+                # email_data = [Gmail(user=request.user, message_id=message['id'], thread_id=message['threadId'])
+                #     for message in messages_list]
+                # try:
+                #     print('gmail insert wale try mai')
+                #     Gmail.objects.bulk_create(email_data)
+                # except Exception as e:
+                #     print(f'Gmail Insertion Error: {e}')
+
                 # Delete each email in the batch
-                for message in messages:
-                    service.users().messages().delete(userId="me", id=message["id"]).execute()
+                for message in messages_list:
+                    #deletes permanently
+                    # service.users().messages().delete(userId="me", id=message["id"]).execute()
+                    #adds to trash
+                    service.users().messages().modify(
+                        userId="me", 
+                        id=message["id"],
+                        body={
+                            "removeLabelIds":"INBOX",
+                            "addLabelIds":["TRASH"]
+                        }).execute()    
                     deleted_count += 1
 
                 # Get the next page token, if available
@@ -46,12 +78,13 @@ def delete_emails_view(request):
                 if not page_token:
                     break  # Exit loop if there are no more pages
 
-            return HttpResponse(f"Deleted {deleted_count} emails in the {category} category.", status=200)
+            messages.success(request, f"Deleted {deleted_count} conversations in the {category} category")
+            return redirect('delete_emails')
 
         except Exception as e:
-            return HttpResponse(f"An error occurred: {e}", status=500)
-
-
+            messages.warning(request, f"Something went wrong")
+            print('errro is', e)
+            return redirect('delete_emails')
 
 from allauth.socialaccount.models import SocialAccount, SocialToken
 
@@ -73,8 +106,44 @@ def retrieve_credentials_for_user(user):
             client_id="your-client-id.apps.googleusercontent.com",
             client_secret="your-client-secret",
         )
+
         return creds
     except SocialAccount.DoesNotExist:
         raise Exception("Google account not linked to this user.")
     except SocialToken.DoesNotExist:
         raise Exception("No Google token found for this user.")
+
+#####recover deleted emails############
+def recover_emails_from_trash_view(request):
+    if not request.user.is_authenticated:
+        return HttpResponse("You are not logged in. Please login to continue.", status=403)
+
+    try:
+        creds = retrieve_credentials_for_user(request.user)
+        service = build("gmail", "v1", credentials=creds)
+
+        # Step 1: Fetch emails from Trash folder
+        results = service.users().messages().list(userId="me", labelIds=["TRASH"]).execute()
+        messages_list = results.get("messages", [])
+        
+        if not messages_list:
+            return render(request, 'recover_emails.html', {"error": "No emails found in Trash."})
+
+        # Step 2: Restore emails from Trash
+        restored_count = 0
+        for message in messages_list:
+            # Move email from Trash to Inbox (remove TRASH label)
+            msg_id = message['id']
+            msg = service.users().messages().modify(
+                userId="me", 
+                id=msg_id,
+                body={"removeLabelIds": ["TRASH"]}
+            ).execute()
+            restored_count += 1
+        
+        # After successful recovery, render success message
+        return render(request, 'recover_emails.html', {"success": f"Successfully restored {restored_count} emails from Trash."})
+
+    except Exception as e:
+        # In case of any error, render the error message
+        return render(request, 'recover_emails.html', {"error": f"An error occurred while recovering emails: {e}"})

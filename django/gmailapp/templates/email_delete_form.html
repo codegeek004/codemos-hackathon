@@ -1,11 +1,28 @@
-<form method="POST" action="{% url 'delete_emails' %}">
-  {% csrf_token %}
-  <label for="category">Choose Email Category to Delete:</label>
-  <select name="category" id="category">
-    <option value="CATEGORY_PROMOTIONS">Promotions</option>
-    <option value="CATEGORY_SOCIAL">Social</option>
-    <option value="CATEGORY_UPDATES">Updates</option>
-    <option value="CATEGORY_FORUMS">Forums</option>
-  </select>
-  <button type="submit">Delete Emails</button>
-</form>
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+
+   {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+  <br><br><h1 style="text-align: center;">Delete your emails</h3>
+    <a href="{% url 'recover_emails' %}" class="btn btn-primary">Recover Deleted Emails</a>
+
+    <form method="POST" action="{% url 'delete_emails' %}">
+      {% csrf_token %}
+      <br><br><h5 style="text-align:center">Choose Category</h5><br><br>
+      <select style="width: 180px; margin-left: 565px;"name="category" id="category">
+        <option value="CATEGORY_PROMOTIONS">Promotions</option>
+        <option value="CATEGORY_SOCIAL">Social</option>
+        <option value="CATEGORY_UPDATES">Updates</option>
+        <option value="CATEGORY_FORUMS">Forums</option>
+      </select>
+      <br><br><br>
+      <button style="margin-left:575px;" class="btn btn-primary" type="submit">Delete Emails</button>
+    </form>
+</div>
+{% endblock %}

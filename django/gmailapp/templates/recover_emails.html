@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Email Recovery Status</title>
+</head>
+<body>
+    <h1>Email Recovery Status</h1>
+    
+    {% if success %}
+        <p style="color:green;">{{ success }}</p>
+    {% elif error %}
+        <p style="color:red;">{{ error }}</p>
+    {% endif %}
+    
+    <a href="{% url 'index' %}">Back to Homepage</a>
+</body>
+</html>
