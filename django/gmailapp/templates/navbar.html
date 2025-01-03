@@ -1,7 +1,32 @@
-<nav class="navbar bg-body-tertiary">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="#">
-      Bootstrap
-    </a>
-  </div>
-</nav>
+<nav class="navbar navbar-expand-lg ">
+          <div class="container-fluid">
+              
+
+              <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+                  <span class="navbar-toggler-icon"></span>
+              </button>
+              <div class="collapse navbar-collapse" id="navbarSupportedContent">
+
+              <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+                  <div class="navbar-nav">
+                      <h4><a  class="nav-link active" aria-current="page" style="margin-left: 10px; color:black;  font-family: 'Trebuchet MS', sans-serif;" href="/"><strong>CODEMOS</strong></a></h4>
+                      <ul class="navbar-nav me-auto mb-2 mb-lg-0" style="font-size: larger; margin-left: 150px;">
+
+              <div class="logout-link" id="logoutnow">
+                  <div class="navbar nav ms-auto" style="display: flex; justify-content: space-between; ">
+                      {% if user.is_authenticated %}
+                         <div class="nav-link-active">
+                              <p style="margin:10px; display: flex; justify-content: center;"><span class="material-symbols--person"></span>{{ username | title }}</p>
+
+                         </div>
+                          <a class="nav-link active" aria-current="page" href="/accounts/logout" style="color:black"><strong>Signout</strong></a>
+                      {% else %}
+                          <!-- <a class="nav-link active" aria-current="page" href="/adminlogin" style="color: white;">Admin</a> -->
+                          <a class="nav-link active" aria-current="page" href="http://127.0.0.1:8000/accounts/google/login/?process=login" style="color:black">Signin</a>
+                          
+                      {% endif %}
+
+                  </div>
+              </div>
+          </div>
+      </nav>
