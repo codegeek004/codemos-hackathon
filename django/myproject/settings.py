@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure--86oenvzrsktb1^m$w+f85we_z%#hc-kk9#-__h_)l0e&0h$q+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'localhost:8000', '*', '44.196.64.149']
+ALLOWED_HOSTS = ['*']
 
 
 
@@ -112,11 +112,11 @@ SOCIALACCOUNT_PROVIDERS = {
         },
         'OAUTH_PKCE_ENABLED': True,
         'APP': {
-            # 'client_id': '99034799467-hl9dbl4t4l64gftesd8bokb1no6kbgu3.apps.googleusercontent.com',
-            # 'secret': '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',
+            'client_id': '99034799467-hl9dbl4t4l64gftesd8bokb1no6kbgu3.apps.googleusercontent.com',
+            'secret': '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',
             # for local development
-            'client_id': '99034799467-6l1lm0l6b80h2bcmon2i8st2odg778nj.apps.googleusercontent.com',
-            'secret': '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',
+            #'client_id': '99034799467-6l1lm0l6b80h2bcmon2i8st2odg778nj.apps.googleusercontent.com',
+            #'secret': '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',
             'key': ''
         }
     }   
@@ -168,7 +168,6 @@ USE_TZ = True
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATIC_URL = 'static/'
-<<<<<<< HEAD
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
 
@@ -184,9 +183,9 @@ CSRF_COOKIE_SECURE =False
 CSRF_COOKIE_HTTPONLY = True
  # Set to True in production
 SESSION_COOKIE_SECURE = False  # Set to True in production
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:8000',
-    ]
+#CORS_ALLOWED_ORIGINS = [
+    #'http://localhost:8000',
+    #]
 
 
 
