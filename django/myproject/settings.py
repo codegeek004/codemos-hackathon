@@ -94,8 +94,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'gmail',
-        'USER': 'ajay',
-        'PASSWORD': 'Root@123',  # Use the correct password you set
+        'USER': 'root',
+        'PASSWORD': 'root',  # Use the correct password you set
         'HOST': 'localhost',
         'PORT': 3306,
     }
@@ -125,6 +125,8 @@ SOCIALACCOUNT_PROVIDERS = {
 
 
 LOGIN_REDIRECT_URL = '/gmail/delete_emails/'
+# LOGIN_REDIRECT_URL = '/'  # Redirect after successful login
+LOGOUT_REDIRECT_URL = '/' 
 
 STATICFILES_DIRS =[BASE_DIR / "static"]
 
@@ -186,6 +188,12 @@ SESSION_COOKIE_SECURE = False  # Set to True in production
 #CORS_ALLOWED_ORIGINS = [
     #'http://localhost:8000',
     #]
+
+CELERY_BROKER_URL = 'redis://localhost:6379/0'  # URL for Redis
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+
 
 
 
