@@ -2,12 +2,16 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
+
 from django.contrib import messages
 
 
 
 def index_view(request):
     return render(request, 'index.html')
+
+from .tasks import delete_emails_task
+
 
 def delete_emails_view(request):
     if not request.user.is_authenticated:
@@ -27,6 +31,7 @@ def delete_emails_view(request):
         ]
         if category not in valid_categories:
             return HttpResponse("Invalid category selected.", status=400)
+
 
         try:
             creds = retrieve_credentials_for_user(request.user)
@@ -81,6 +86,13 @@ def delete_emails_view(request):
         except Exception as e:
             messages.warning(request, f"Something went wrong")
             return redirect('delete_emails')
+
+
+        delete_emails_task.delay(request.user.id, category)
+
+        messages.success(request, "Your email deletion request has been started.")
+        return redirect('delete_emails')
+
 
 from allauth.socialaccount.models import SocialAccount, SocialToken
 
