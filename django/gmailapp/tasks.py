@@ -1,6 +1,6 @@
 from celery import shared_task
 from googleapiclient.discovery import build
-from .views import retrieve_credentials_for_user
+from .utils import retrieve_credentials_for_user
 
 @shared_task
 def delete_emails_task(user_id, category):
