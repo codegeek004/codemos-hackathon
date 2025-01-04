@@ -102,6 +102,9 @@ def delete_emails_view(request):
 
         messages.success(request, "Your email deletion request has been started.")
         return redirect('delete_emails')
+    except Exception as e:
+        print(e)
+        return redirect('delete_emails')
 
 
 
