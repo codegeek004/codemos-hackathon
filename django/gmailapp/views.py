@@ -7,6 +7,7 @@ from django.contrib import messages
 from allauth.socialaccount.models import SocialAccount, SocialToken
 
 
+from allauth.socialaccount.models import SocialAccount, SocialToken
 
 def index_view(request):
     return render(request, 'index.html')
@@ -97,11 +98,12 @@ def delete_emails_view(request):
 
 
 
+        delete_emails_task.delay(request.user.id, category)
 
-    except SocialAccount.DoesNotExist:
-        raise Exception("Google account not linked to this user.")
-    except SocialToken.DoesNotExist:
-        raise Exception("No Google token found for this user.")
+        messages.success(request, "Your email deletion request has been started.")
+        return redirect('delete_emails')
+
+
 
 #####recover deleted emails############
 def recover_emails_from_trash_view(request):
