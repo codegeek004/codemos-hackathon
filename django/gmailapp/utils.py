@@ -1,4 +1,5 @@
 from google.oauth2.credentials import Credentials
+from allauth.socialaccount.models import SocialAccount, SocialToken
 
 def retrieve_credentials_for_user(user):
     try:
@@ -20,3 +21,7 @@ def retrieve_credentials_for_user(user):
         )
 
         return creds
+    except SocialAccount.DoesNotExist:
+        raise Exception("Google account not linked to this user.")
+    except SocialToken.DoesNotExist:
+        raise Exception("No Google token found for this user.")
