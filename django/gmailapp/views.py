@@ -6,6 +6,7 @@ from .utils import retrieve_credentials_for_user
 from django.contrib import messages
 
 
+from allauth.socialaccount.models import SocialAccount, SocialToken
 
 def index_view(request):
     return render(request, 'index.html')
@@ -94,7 +95,6 @@ def delete_emails_view(request):
         return redirect('delete_emails')
 
 
-from allauth.socialaccount.models import SocialAccount, SocialToken
 
 
     except SocialAccount.DoesNotExist:
