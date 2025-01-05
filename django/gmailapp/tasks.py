@@ -5,28 +5,24 @@ from .utils import retrieve_credentials_for_user
 @shared_task
 def delete_emails_task(user_id, category):
     try:
-
         creds = retrieve_credentials_for_user(user_id)
         service = build("gmail", "v1", credentials=creds)
-
 
         query = f"category:{category.split('_')[1].lower()}"
         deleted_count = 0
         page_token = None
 
         while True:
-
+            # Fetch emails
             results = service.users().messages().list(
                 userId="me", q=query, pageToken=page_token
             ).execute()
-
-
             messages_list = results.get("messages", [])
 
             if not messages_list:
                 break
 
-
+            # Delete emails in the batch
             for message in messages_list:
                 service.users().messages().modify(
                     userId="me", 
@@ -34,14 +30,14 @@ def delete_emails_task(user_id, category):
                     body={
                         "removeLabelIds": ["INBOX"],
                         "addLabelIds": ["TRASH"]
-                    }).execute()    
+                    }).execute()
                 deleted_count += 1
 
-
+            # Get next page token, if any
             page_token = results.get("nextPageToken")
             if not page_token:
                 break
 
-        return deleted_count
+        return f"Deleted {deleted_count} emails in category {category}"
     except Exception as e:
-        return str(e)
+        return f"An error occurred: {e}"
