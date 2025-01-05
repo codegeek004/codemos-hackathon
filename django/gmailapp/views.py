@@ -87,6 +87,7 @@ def delete_emails_view(request):
                 return redirect('delete_emails')
 
             except Exception as e:
+                print('exception', e)
                 messages.warning(request, f"Something went wrong")
                 return redirect('delete_emails')
 
