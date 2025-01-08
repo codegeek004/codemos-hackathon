@@ -17,4 +17,4 @@ app.conf.update(result_expires=5400)
 
 # Load task modules from all registered Django app configs.
 app.conf.broker_connection_retry_on_startup = True
-app.autodiscover_tasks(['tasks'])
+app.autodiscover_tasks()
