@@ -6,8 +6,8 @@ import logging
 @shared_task
 def delete_emails_task(user_id, category):
     try:
-        logger.info(f"delete_emails_task called with user_id={user_id}, category={category}")
-        logger.info(f"Type of category: {type(category)}")
+        # logger.info(f"delete_emails_task called with user_id={user_id}, category={category}")
+        # logger.info(f"Type of category: {type(category)}")
         if not isinstance(category, str):
             raise ValueError("The 'category' parameter must be a string in the format 'CATEGORY_NAME'.")
 
