@@ -5,6 +5,9 @@ from .utils import retrieve_credentials_for_user
 @shared_task
 def delete_emails_task(user_id, category):
     try:
+        if not isinstance(category, str):
+            raise ValueError("The 'category' parameter must be a string in the format 'CATEGORY_NAME'.")
+
         creds = retrieve_credentials_for_user(user_id)
         service = build("gmail", "v1", credentials=creds)
 
@@ -13,7 +16,6 @@ def delete_emails_task(user_id, category):
         page_token = None
 
         while True:
-            # Fetch emails
             results = service.users().messages().list(
                 userId="me", q=query, pageToken=page_token
             ).execute()
