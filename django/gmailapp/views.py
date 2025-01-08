@@ -35,10 +35,10 @@ def delete_emails_view(request):
             if category not in valid_categories:
                 return HttpResponse("Invalid category selected.", status=400)
 
-            # NEW: Trigger the Celery task
+
             delete_emails_task.delay(request.user.id, category)
 
-            # NEW: Inform the user
+
             messages.success(request, "Your email deletion request has been started. You will be notified upon completion.")
             return redirect('delete_emails')
 
@@ -57,28 +57,39 @@ def recover_emails_from_trash_view(request):
         creds = retrieve_credentials_for_user(request.user)
         service = build("gmail", "v1", credentials=creds)
 
-        # Step 1: Fetch emails from Trash folder
-        results = service.users().messages().list(userId="me", labelIds=["TRASH"]).execute()
-        messages_list = results.get("messages", [])
+        messages_list = []
+        next_page_token = None
+
+        while True:
+            results = service.users().messages().list(
+                userId="me", 
+                labelIds=["TRASH"], 
+                pageToken=next_page_token
+            ).execute()
+            
+            messages_list.extend(results.get("messages", []))
+            
+            next_page_token = results.get("nextPageToken")
+            if not next_page_token:
+                break
         
         if not messages_list:
             return render(request, 'recover_emails.html', {"error": "No emails found in Trash."})
 
-        # Step 2: Restore emails from Trash
         restored_count = 0
         for message in messages_list:
-            # Move email from Trash to Inbox (remove TRASH label)
             msg_id = message['id']
-            msg = service.users().messages().modify(
+            service.users().messages().modify(
                 userId="me", 
                 id=msg_id,
                 body={"removeLabelIds": ["TRASH"]}
             ).execute()
             restored_count += 1
         
-        # After successful recovery, render success message
         return render(request, 'recover_emails.html', {"success": f"Successfully restored {restored_count} emails from Trash."})
 
+    except HttpError as error:
+        return render(request, 'recover_emails.html', {"error": f"Gmail API error: {error}"})
+    
     except Exception as e:
-        # In case of any error, render the error message
         return render(request, 'recover_emails.html', {"error": f"An error occurred while recovering emails: {e}"})
