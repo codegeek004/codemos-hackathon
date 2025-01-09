@@ -43,7 +43,7 @@ def delete_emails_view(request):
             return redirect('delete_emails')
 
     except Exception as e:
-        print(e)
+#        print(e)
         messages.error(request, "An error occurred while processing your request.")
         return redirect('delete_emails')
 
