@@ -15,14 +15,14 @@
     <form method="POST" action="{% url 'delete_emails' %}">
       {% csrf_token %}
       <br><br><h5 style="text-align:center">Choose Category</h5><br><br>
-      <select style="width: 180px; margin-left: 565px;"name="category" id="category">
+      <select style="width: 180px; margin-left: 480px;"name="category" id="category">
         <option value="CATEGORY_PROMOTIONS">Promotions</option>
         <option value="CATEGORY_SOCIAL">Social</option>
         <option value="CATEGORY_UPDATES">Updates</option>
         <option value="CATEGORY_FORUMS">Forums</option>
       </select>
       <br><br><br>
-      <button style="margin-left:575px;" class="btn btn-primary" type="submit">Delete Emails</button>
+      <button style="margin-left:500px;" class="btn btn-primary" type="submit">Delete Emails</button>
     </form>
 </div>
 {% endblock %}
