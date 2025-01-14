@@ -1,18 +1,20 @@
 from django.shortcuts import render, redirect
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 from .utils import retrieve_credentials_for_user
 from django.contrib import messages
 from allauth.socialaccount.models import SocialAccount, SocialToken
 from .models import TaskStatus
-
+import json
 from allauth.socialaccount.models import SocialAccount, SocialToken
+from .tasks import delete_emails_task
+from django.shortcuts import get_object_or_404
+from django.db import transaction
+
 
 def index_view(request):
     return render(request, 'index.html')
-
-from .tasks import delete_emails_task
 
 
 def delete_emails_view(request):
@@ -20,7 +22,6 @@ def delete_emails_view(request):
         if not request.user.is_authenticated:
             messages.error(request, "You are not logged in. Please login to continue.")
             return redirect('index')
-
 
         if request.method == "GET":
             return render(request, "email_delete_form.html")
@@ -37,37 +38,54 @@ def delete_emails_view(request):
                 return HttpResponse("Invalid category selected.", status=400)
 
             task = delete_emails_task.delay(request.user.id, category)
+
+            # Create TaskStatus object to track task progress
             TaskStatus.objects.create(
-                    task_id = task.id,
-                    user = request.user,
-                    status = "IN_PROGRESS"
-                )
+                task_id=task.id,
+                user=request.user,
+                status="IN_PROGRESS"
+            )
 
             messages.success(request, "Your email deletion request has been started. You will be notified upon completion.")
-            return redirect('polling_view', task_id=task.id)
+            
+            # Redirect to check the task status using the task_id
+            return redirect('check_task_status', task_id=task.id)
 
     except Exception as e:
         print(e)
         messages.error(request, "An error occurred while processing your request.")
-        return redirect('delete_emails')
+        return render(request, 'email_delete_form.html')
 
 
-def polling_view(request, task_id):
-    if not request.user.is_authenticated:
+def check_task_status_view(request, task_id):
+    try:
+        if not request.user.is_authenticated:
             messages.error(request, "You are not logged in. Please login to continue.")
             return redirect('index')
-    try:
-        task = TaskStatus.objects.get(task_id=task_id, user=request.user)
+
+        task_status = TaskStatus.objects.get(task_id=task_id, user=request.user)
+
+        if task_status.status == "SUCCESS":
+            message = f"Your emails have been deleted successfully! {task_status.result}"
+        elif task_status.status == "FAILURE":
+            message = "An error occurred while deleting emails. Please try again later."
+        else:  
+            message = "Your email deletion is still in progress. Please check back later."
+
         context = {
-                "task_status": task.status,
-                "task_result": task.result,
-                "task_id": task_id,
-            }
-        return render(request, "polling.html", context)
+            "message": message,
+            "task_status": task_status
+        }
+        return render(request, "check_task_status.html", context)
+
     except TaskStatus.DoesNotExist:
-        # Handle missing or invalid task ID
-        context = {"error": "Task not found or you do not have access to it."}
-        return render(request, "polling.html", context)
+        messages.error(request, "Task not found or you do not have permission to view it.")
+        return redirect('index')
+    except Exception as e:
+        messages.error(request, f"An error occurred: {e}")
+        return redirect('index')
+
+
 
 
 #####recover deleted emails############
@@ -106,12 +124,11 @@ def recover_emails_from_trash_view(request):
                 id=msg_id,
                 body={"removeLabelIds": ["TRASH"]}
             ).execute()
+
             restored_count += 1
-        
+
         return render(request, 'recover_emails.html', {"success": f"Successfully restored {restored_count} emails from Trash."})
 
-    except HttpError as error:
-        return render(request, 'recover_emails.html', {"error": f"Gmail API error: {error}"})
     
     except Exception as e:
         return render(request, 'recover_emails.html', {"error": f"An error occurred while recovering emails: {e}"})
