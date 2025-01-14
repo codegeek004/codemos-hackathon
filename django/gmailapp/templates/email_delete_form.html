@@ -12,6 +12,19 @@
   <br><br><h1 style="text-align: center;">Delete your emails</h3>
     <a href="{% url 'recover_emails' %}" class="btn btn-primary" style= "margin-left: 455px; margin-top: 20px;" >Recover Deleted Emails</a>
 
+    {% if polling %}
+      <div style="text-align: center; margin-top: 20px;">
+            {% if task_status == "IN_PROGRESS" %}
+                <p>Your task is still in progress. Please wait...</p>
+                <meta http-equiv="refresh" content="25;url='{% url 'polling_view' task_id=task_id %}'">
+            {% elif task_status == "SUCCESS" %}
+                <p>Your task was completed successfully!</p>
+            {% elif task_status == "FAILURE" %}
+                <p>Your task failed. Please try again.</p>
+            {% endif %}
+      </div>
+
+    {% else %}
     <form method="POST" action="{% url 'delete_emails' %}">
       {% csrf_token %}
       <br><br><h5 style="text-align:center">Choose Category</h5><br><br>
@@ -24,5 +37,31 @@
       <br><br><br>
       <button style="margin-left:500px;" class="btn btn-primary" type="submit">Delete Emails</button>
     </form>
+    {% endif %}
+
+<script>
+  const taskId = "{{ task_id }}";  // Get the task ID from the template
+  const statusUrl = `/check_task_status/${taskId}/`;
+
+  function checkTaskStatus() {
+    fetch(statusUrl)
+      .then(response => response.json())
+      .then(data => {
+        const statusElement = document.getElementById('status-message');
+        statusElement.innerText = data.message;  // Update the status message
+        
+        // Stop polling if task is completed
+        if (data.status === "SUCCESS" || data.status === "FAILURE") {
+          clearInterval(interval);
+        }
+      })
+      .catch(error => console.error("Error checking task status:", error));
+  }
+
+  // Poll the server every 5 seconds
+  const interval = setInterval(checkTaskStatus, 5000);
+</script>
+
+    
 </div>
 {% endblock %}

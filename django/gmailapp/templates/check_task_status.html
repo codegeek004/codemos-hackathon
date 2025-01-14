@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Task Status</title>
+</head>
+<body>
+    <h1>Task Status</h1>
+
+    {% if message %}
+        <p>{{ message }}</p>
+    {% endif %}
+
+    <p>Status: {{ task_status.status }}</p>
+    <p>Created At: {{ task_status.created_at }}</p>
+
+    {% if task_status.result %}
+        <p>Result: {{ task_status.result }}</p>
+    {% endif %}
+
+    <a href="{% url 'delete_emails' %}">Back to Delete Emails</a>
+</body>
+</html>
