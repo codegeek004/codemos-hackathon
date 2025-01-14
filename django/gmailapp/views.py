@@ -5,7 +5,7 @@ from google.oauth2.credentials import Credentials
 from .utils import retrieve_credentials_for_user
 from django.contrib import messages
 from allauth.socialaccount.models import SocialAccount, SocialToken
-
+from .models import TaskStatus
 
 from allauth.socialaccount.models import SocialAccount, SocialToken
 
@@ -21,6 +21,7 @@ def delete_emails_view(request):
             messages.error(request, "You are not logged in. Please login to continue.")
             return redirect('index')
 
+
         if request.method == "GET":
             return render(request, "email_delete_form.html")
 
@@ -35,17 +36,38 @@ def delete_emails_view(request):
             if category not in valid_categories:
                 return HttpResponse("Invalid category selected.", status=400)
 
-
-            delete_emails_task.delay(request.user.id, category)
-
+            task = delete_emails_task.delay(request.user.id, category)
+            TaskStatus.objects.create(
+                    task_id = task.id,
+                    user = request.user,
+                    status = "IN_PROGRESS"
+                )
 
             messages.success(request, "Your email deletion request has been started. You will be notified upon completion.")
-            return redirect('delete_emails')
+            return redirect('polling_view', task_id=task.id)
 
     except Exception as e:
-#        print(e)
+        print(e)
         messages.error(request, "An error occurred while processing your request.")
         return redirect('delete_emails')
+
+
+def polling_view(request, task_id):
+    if not request.user.is_authenticated:
+            messages.error(request, "You are not logged in. Please login to continue.")
+            return redirect('index')
+    try:
+        task = TaskStatus.objects.get(task_id=task_id, user=request.user)
+        context = {
+                "task_status": task.status,
+                "task_result": task.result,
+                "task_id": task_id,
+            }
+        return render(request, "polling.html", context)
+    except TaskStatus.DoesNotExist:
+        # Handle missing or invalid task ID
+        context = {"error": "Task not found or you do not have access to it."}
+        return render(request, "polling.html", context)
 
 
 #####recover deleted emails############
