@@ -5,7 +5,8 @@ from google.oauth2.credentials import Credentials
 from .utils import retrieve_credentials_for_user
 from django.contrib import messages
 from allauth.socialaccount.models import SocialAccount, SocialToken
-
+from googleapiclient.errors import HttpError 
+#adding explicitly this error 'HttpError'
 
 from allauth.socialaccount.models import SocialAccount, SocialToken
 
