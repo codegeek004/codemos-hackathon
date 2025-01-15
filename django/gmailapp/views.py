@@ -4,13 +4,14 @@ from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 from .utils import retrieve_credentials_for_user
 from django.contrib import messages
-from allauth.socialaccount.models import SocialAccount, SocialToken
 from .models import TaskStatus, RecoverStatus
 import json
 from allauth.socialaccount.models import SocialAccount, SocialToken
 from .tasks import delete_emails_task, recover_emails_task
 from django.shortcuts import get_object_or_404
 from django.core.mail import EmailMessage
+from .auth import check_token_validity
+from django.contrib.auth import logout
 
 
 def index_view(request):
@@ -19,6 +20,13 @@ def index_view(request):
 
 def delete_emails_view(request):
     try:
+        creds = retrieve_credentials_for_user(request.user.id)
+        if check_token_validity(creds.token) == False:
+            request.session.flush()
+            logout(request)
+            messages.warning(request, 'Your session was expired. login again to continue')
+            return redirect('index')
+
         if not request.user.is_authenticated:
             messages.error(request, "You are not logged in. Please login to continue.")
             return redirect('index')
@@ -50,6 +58,8 @@ def delete_emails_view(request):
             
             # Redirect to check the task status using the task_id
             return redirect('check_task_status', task_id=task.id)
+    
+
 
     except Exception as e:
         print(e)
@@ -59,6 +69,13 @@ def delete_emails_view(request):
 
 def check_task_status_view(request, task_id):
     try:
+        creds = retrieve_credentials_for_user(request.user.id)
+        if check_token_validity(creds.token) == False:
+            request.session.flush()
+            logout(request)
+            messages.warning(request, 'Your session was expired. login again to continue')
+            return redirect('index')
+
         if not request.user.is_authenticated:
             messages.error(request, "You are not logged in. Please login to continue.")
             return redirect('index')
@@ -146,6 +163,9 @@ def email_recovery_status_view(request, task_id):
     except Exception as e:
         messages.error(request, f"An error occurred: {e}")
         return redirect('index')
+
+
+
 
 
 
