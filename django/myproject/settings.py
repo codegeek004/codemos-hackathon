@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     #my apps
     'gmailapp',
+    'photos',
     #allauth
     "allauth_ui",
     'allauth',
