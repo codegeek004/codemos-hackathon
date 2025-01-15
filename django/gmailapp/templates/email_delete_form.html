@@ -12,6 +12,19 @@
   <br><br><h1 style="text-align: center;">Delete your emails</h3>
     <a href="{% url 'recover_emails' %}" class="btn btn-primary" style= "margin-left: 460px; margin-top: 20px;" >Recover Deleted Emails</a>
 
+    {% if polling %}
+      <div style="text-align: center; margin-top: 20px;">
+            {% if task_status == "IN_PROGRESS" %}
+                <p>Your task is still in progress. Please wait...</p>
+                <meta http-equiv="refresh" content="25;url='{% url 'polling_view' task_id=task_id %}'">
+            {% elif task_status == "SUCCESS" %}
+                <p>Your task was completed successfully!</p>
+            {% elif task_status == "FAILURE" %}
+                <p>Your task failed. Please try again.</p>
+            {% endif %}
+      </div>
+
+    {% else %}
     <form method="POST" action="{% url 'delete_emails' %}">
       {% csrf_token %}
       <br><br><h5 style="text-align:center">Choose Category</h5><br><br>
@@ -24,5 +37,10 @@
       <br><br><br>
       <button style="margin-left:500px;" class="btn btn-primary" type="submit">Delete Emails</button>
     </form>
+    {% endif %}
+
+
+
+    
 </div>
 {% endblock %}
