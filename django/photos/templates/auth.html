@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Authentication</title>
+</head>
+<body>
+    <h1>Google Authentication</h1>
+    
+    <!-- Source Account Authentication -->
+    <div>
+        <h2>Authenticate Source Account</h2>
+        <p>Click the button below to authenticate your source Google account:</p>
+        <form action="{% url 'google_auth' %}" method="get">
+            <button type="submit">Authenticate with Google</button>
+        </form>
+    </div>
+    
+    <hr>
+
+    
+
+    <!-- Logout -->
+    <div>
+        <h2>Logout</h2>
+        <form action="{% url 'logout' %}" method="get">
+            <button type="submit">Logout</button>
+        </form>
+    </div>
+</body>
+</html>
