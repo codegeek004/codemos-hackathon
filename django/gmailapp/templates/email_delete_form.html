@@ -39,28 +39,7 @@
     </form>
     {% endif %}
 
-<script>
-  const taskId = "{{ task_id }}";  // Get the task ID from the template
-  const statusUrl = `/check_task_status/${taskId}/`;
 
-  function checkTaskStatus() {
-    fetch(statusUrl)
-      .then(response => response.json())
-      .then(data => {
-        const statusElement = document.getElementById('status-message');
-        statusElement.innerText = data.message;  // Update the status message
-        
-        // Stop polling if task is completed
-        if (data.status === "SUCCESS" || data.status === "FAILURE") {
-          clearInterval(interval);
-        }
-      })
-      .catch(error => console.error("Error checking task status:", error));
-  }
-
-  // Poll the server every 5 seconds
-  const interval = setInterval(checkTaskStatus, 5000);
-</script>
 
     
 </div>
