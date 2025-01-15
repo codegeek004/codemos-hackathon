@@ -94,8 +94,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'gmail',
+        #'USER': 'root',
+        #'PASSWORD': 'root',  
         'USER': 'ajay',
-        'PASSWORD': 'Root@123',  # Use the correct password you set
+        'PASSWORD': 'Root@123',
         'HOST': 'localhost',
         'PORT': 3306,
     }
@@ -158,7 +160,7 @@ AUTHENTICATION_BACKENDS = (
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kolkata'
 
 USE_I18N = True
 
@@ -200,5 +202,14 @@ CELERY_TASK_TIME_LIMIT = 30 * 60
 CSRF_TRUSTED_ORIGINS = [
     'https://del.codemos.in',
 ]
+
+#smtp configurations
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_USE_TLS = True
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = 'codegeek004@gmail.com'
+EMAIL_HOST_PASSWORD = 'yfbq lrsg xfao hvmd'
+EMAIL_PORT = 587
+
 
 
