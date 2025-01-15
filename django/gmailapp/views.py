@@ -1,23 +1,37 @@
 from django.shortcuts import render, redirect
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 from .utils import retrieve_credentials_for_user
 from django.contrib import messages
+from .models import TaskStatus, RecoverStatus
+import json
 from allauth.socialaccount.models import SocialAccount, SocialToken
+
+from .tasks import delete_emails_task, recover_emails_task
+from django.shortcuts import get_object_or_404
+from django.core.mail import EmailMessage
+from .auth import check_token_validity
+from django.contrib.auth import logout
+
+
 from googleapiclient.errors import HttpError 
 #adding explicitly this error 'HttpError'
 
-from allauth.socialaccount.models import SocialAccount, SocialToken
 
 def index_view(request):
     return render(request, 'index.html')
 
-from .tasks import delete_emails_task
-
 
 def delete_emails_view(request):
     try:
+        creds = retrieve_credentials_for_user(request.user.id)
+        if check_token_validity(creds.token) == False:
+            request.session.flush()
+            logout(request)
+            messages.warning(request, 'Your session was expired. login again to continue')
+            return redirect('index')
+
         if not request.user.is_authenticated:
             messages.error(request, "You are not logged in. Please login to continue.")
             return redirect('index')
@@ -36,17 +50,68 @@ def delete_emails_view(request):
             if category not in valid_categories:
                 return HttpResponse("Invalid category selected.", status=400)
 
+            task = delete_emails_task.delay(request.user.id, category)
 
-            delete_emails_task.delay(request.user.id, category)
-
+            # Create TaskStatus object to track task progress
+            TaskStatus.objects.create(
+                task_id=task.id,
+                user=request.user,
+                status="IN_PROGRESS"
+            )
 
             messages.success(request, "Your email deletion request has been started. You will be notified upon completion.")
-            return redirect('delete_emails')
+            
+            # Redirect to check the task status using the task_id
+            return redirect('check_task_status', task_id=task.id)
+    
+
 
     except Exception as e:
-#        print(e)
+        print(e)
         messages.error(request, "An error occurred while processing your request.")
-        return redirect('delete_emails')
+        return render(request, 'email_delete_form.html')
+
+
+def check_task_status_view(request, task_id):
+    try:
+        creds = retrieve_credentials_for_user(request.user.id)
+        if check_token_validity(creds.token) == False:
+            request.session.flush()
+            logout(request)
+            messages.warning(request, 'Your session was expired. login again to continue')
+            return redirect('index')
+
+        if not request.user.is_authenticated:
+            messages.error(request, "You are not logged in. Please login to continue.")
+            return redirect('index')
+
+        task_status = TaskStatus.objects.get(task_id=task_id, user=request.user)
+
+        if task_status.status == "SUCCESS":
+            print(request.user.email)
+            message = f"Your {task_status.deleted_count} emails have been deleted successfully! {task_status.result}"
+            email = EmailMessage('Emails deleted', f'Your {task_status.deleted_count} emails has been deleted succesfully. Thanks for choosing CODEMOS.', to=[request.user.email])
+            email.send()
+
+        elif task_status.status == "FAILURE":
+            message = "An error occurred while deleting emails. Please try again later."
+        else:  
+            message = "Your email deletion is still in progress. Please check back later."
+
+        context = {
+            "message": message,
+            "task_status": task_status
+        }
+        return render(request, "check_task_status.html", context)
+
+    except TaskStatus.DoesNotExist:
+        messages.error(request, "Task not found or you do not have permission to view it.")
+        return redirect('index')
+    except Exception as e:
+        messages.error(request, f"An error occurred: {e}")
+        return redirect('index')
+
+
 
 
 #####recover deleted emails############
@@ -55,42 +120,60 @@ def recover_emails_from_trash_view(request):
         return HttpResponse("You are not logged in. Please login to continue.", status=403)
 
     try:
-        creds = retrieve_credentials_for_user(request.user)
-        service = build("gmail", "v1", credentials=creds)
 
-        messages_list = []
-        next_page_token = None
+        task = recover_emails_task.delay(request.user.id)
 
-        while True:
-            results = service.users().messages().list(
-                userId="me", 
-                labelIds=["TRASH"], 
-                pageToken=next_page_token
-            ).execute()
-            
-            messages_list.extend(results.get("messages", []))
-            
-            next_page_token = results.get("nextPageToken")
-            if not next_page_token:
-                break
-        
-        if not messages_list:
-            return render(request, 'recover_emails.html', {"error": "No emails found in Trash."})
+        RecoverStatus.objects.create(
+            task_id=task.id,
+            user=request.user,
+            status='IN_PROGRESS'
+            )
+        messages.success(request, 'Your email recovery is in progress. You will be notified when all emails are recovered successfully.')
 
-        restored_count = 0
-        for message in messages_list:
-            msg_id = message['id']
-            service.users().messages().modify(
-                userId="me", 
-                id=msg_id,
-                body={"removeLabelIds": ["TRASH"]}
-            ).execute()
-            restored_count += 1
-        
-        return render(request, 'recover_emails.html', {"success": f"Successfully restored {restored_count} emails from Trash."})
-
-    except HttpError as error:
-        return render(request, 'recover_emails.html', {"error": f"Gmail API error: {error}"})
+        return redirect('email_recovery_status', task_id=task.id)
     
     except Exception as e:
-        return render(request, 'recover_emails.html', {"error": f"An error occurred while recovering emails: {e}"})
+        print(e)
+        messages.error(request, "An error occurred while processing your request.")
+        return render(request, 'email_delete_form.html')
+
+def email_recovery_status_view(request, task_id):
+    try:
+        if not request.user.is_authenticated:
+            messages.warning('You are not logged in. Login to perform this action')
+            return redirect('index')
+
+        task_status = RecoverStatus.objects.get(task_id=task_id, user=request.user)
+        print(task_status.status, 'lskglsgbllskb')
+        if task_status.status == "SUCCESS":
+            print(request.user.email)
+            message = f"Your {task_status.recover_count} emails have been deleted successfully! {task_status.result}"
+            email = EmailMessage('Emails deleted', f'Your {task_status.recover_count} emails has been deleted succesfully. Thanks for choosing CODEMOS.', to=[request.user.email])
+            email.send()
+
+        elif task_status.status == "FAILURE":
+            message = "An error occurred while deleting emails. Please try again later."
+        else:  
+            message = "Your email deletion is still in progress. Please check back later."
+
+        context = {
+            "message": message,
+            "task_status": task_status
+        }
+        return render(request, "recovery_task_status.html", context)
+
+    except TaskStatus.DoesNotExist:
+        messages.error(request, "Task not found or you do not have permission to view it.")
+        return redirect('index')
+    except Exception as e:
+        messages.error(request, f"An error occurred: {e}")
+        return redirect('index')
+
+
+
+
+
+
+
+
+
