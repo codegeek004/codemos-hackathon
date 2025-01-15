@@ -42,10 +42,22 @@ def retrieve_credentials_for_user(user):
     except SocialToken.DoesNotExist:
         raise Exception("No Google token found for this user.")
 
-# Get the photos service using the credentials
+
+from google.auth.transport.requests import Request
+
 def get_photos_service(credentials):
-    http = credentials.authorize(httplib2.Http())
+    # Refresh the token if it's expired
+    if credentials.expired and credentials.refresh_token:
+        credentials.refresh(Request())
+
+    # Create an authorized http object with the credentials
+    http = credentials.authorize(Request())
+
+    # Build the service object
     return build(API_NAME, API_VERSION, http=http, static_discovery=False)
+
+
+
 
 @login_required
 def migrate_photos(request):
