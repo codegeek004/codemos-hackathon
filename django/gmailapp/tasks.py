@@ -2,20 +2,20 @@ from celery import shared_task
 from googleapiclient.discovery import build
 from .utils import retrieve_credentials_for_user
 import logging 
-from .models import TaskStatus
+from .models import TaskStatus, RecoverStatus
 import requests
 
 #with bind=True we can use self in the function
 @shared_task(bind=True)
 def delete_emails_task(self, user_id, category):
     try:
-        # Get or create the TaskStatus object
+
         task_status, created = TaskStatus.objects.get_or_create(
             task_id=self.request.id,
             user_id=user_id
         )
 
-        # Set the initial status to IN_PROGRESS
+
         task_status.status = "IN_PROGRESS"
         task_status.save()
 
@@ -54,15 +54,16 @@ def delete_emails_task(self, user_id, category):
 
         result_message = f"Deleted {deleted_count} emails in category {category}"
 
-        # Update the TaskStatus to SUCCESS once the task completes
+
         task_status.status = "SUCCESS"
         task_status.result = result_message
+        task_status.deleted_count = deleted_count
         task_status.save()
+
 
         return result_message, messages_list
 
     except Exception as e:
-        # Handle errors and update status to FAILURE if something goes wrong
         task_status.status = "FAILURE"
         task_status.result = f"An error occurred: {e}"
         task_status.save()
@@ -70,4 +71,70 @@ def delete_emails_task(self, user_id, category):
         return task_status.result
 
 
+@shared_task(bind=True)
+def recover_emails_task(self, user_id):
+    try:
 
+        task_status, created = RecoverStatus.objects.get_or_create(
+            task_id=self.request.id,
+            user_id=user_id
+        )
+
+        task_status.status = "IN_PROGRESS"
+        task_status.save()
+
+        creds = retrieve_credentials_for_user(user_id)
+        service = build("gmail", "v1", credentials=creds)
+
+        recover_count = 0
+        next_page_token = None
+        messages_list = []  
+
+        while True:
+
+            results = service.users().messages().list(
+                userId="me",
+                labelIds=["TRASH"],
+                pageToken=next_page_token
+            ).execute()
+
+            next_page_token = results.get("nextPageToken")
+
+            if not next_page_token:
+                break
+
+            messages_list.extend(results.get("messages", []))
+
+        if not messages_list:
+            task_status.status = "SUCCESS"
+            task_status.result = "No emails found in Trash."    
+            task_status.save()
+            return task_status.result
+
+
+        for message in messages_list:
+            msg_id = message['id']
+
+            service.users().messages().modify(
+                userId="me", 
+                id=msg_id,
+                body={"removeLabelIds": ["TRASH"]}
+            ).execute()
+
+            recover_count += 1  
+
+        result_message = f"Recovered {recover_count} emails."
+
+        task_status.status = "SUCCESS"
+        task_status.result = result_message
+        task_status.recover_count = recover_count  
+        task_status.save()
+
+        return result_message, recover_count
+
+    except Exception as e:
+        task_status.status = "FAILURE"
+        task_status.result = f"An error occurred: {e}"
+        task_status.save()
+
+        return task_status.result
