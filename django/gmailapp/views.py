@@ -134,7 +134,7 @@ def recover_emails_from_trash_view(request):
     
     except Exception as e:
         print(e)
-        messages.error(request, "An error occurred while processing your request.")
+        messages.error(request, f"An error occurred while processing your request. {e}")
         return render(request, 'email_delete_form.html')
 
 def email_recovery_status_view(request, task_id):
