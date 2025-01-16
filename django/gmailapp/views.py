@@ -68,7 +68,7 @@ def delete_emails_view(request):
 
     except Exception as e:
         print(e)
-        messages.error(request, "An error occurred while processing your request.")
+        messages.error(request, f"An error occurred while processing your request. {e}")
         return render(request, 'email_delete_form.html')
 
 
