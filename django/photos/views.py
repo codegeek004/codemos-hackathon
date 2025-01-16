@@ -5,8 +5,8 @@ from googleapiclient.http import MediaIoBaseDownload, MediaFileUpload
 from django.contrib.auth.decorators import login_required
 from allauth.socialaccount.models import SocialAccount, SocialToken
 from google.oauth2.credentials import Credentials
-
-
+from gmailapp.auth import check_token_validity
+from django.contrib.auth import logout
 import httplib2
 import requests
 import io
@@ -80,10 +80,17 @@ def get_photos_service(credentials):
 
 
 def migrate_photos(request):
+
     # Get source credentials from social token (Google account)
     if not request.user.is_authenticated:
         messages.error(request, "You are not logged in. Please login to continue.")
         return redirect("index")
+    creds = retrieve_credentials_for_user(request.user.id)
+    if check_token_validity(creds.token) == False:
+        request.session.flush()
+        logout(request)
+        messages.warning(request, 'Your session was expired. login again to continue')
+        return redirect('index')
     try:
         source_credentials = retrieve_credentials_for_user(request.user)
     except Exception as e:
