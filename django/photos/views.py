@@ -5,6 +5,8 @@ from googleapiclient.http import MediaIoBaseDownload, MediaFileUpload
 from django.contrib.auth.decorators import login_required
 from allauth.socialaccount.models import SocialAccount, SocialToken
 from google.oauth2.credentials import Credentials
+
+
 import httplib2
 import requests
 import io
@@ -50,12 +52,10 @@ def get_photos_service(credentials):
     if credentials.expired and credentials.refresh_token:
         credentials.refresh(Request())
 
-    # Create an authorized http object with the credentials
-    http = credentials.authorize(Request())
+    # Build the service object using credentials directly
+    service = build(API_NAME, API_VERSION, credentials=credentials, static_discovery=False)
 
-    # Build the service object
-    return build(API_NAME, API_VERSION, http=http, static_discovery=False)
-
+    return service
 
 
 
