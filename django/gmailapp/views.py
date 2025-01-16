@@ -7,7 +7,7 @@ from django.contrib import messages
 from .models import TaskStatus, RecoverStatus
 import json
 from allauth.socialaccount.models import SocialAccount, SocialToken
-<<<<<<< HEAD
+
 from .tasks import delete_emails_task, recover_emails_task
 from django.shortcuts import get_object_or_404
 from django.core.mail import EmailMessage
