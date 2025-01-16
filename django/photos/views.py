@@ -79,9 +79,11 @@ def get_photos_service(credentials):
 
 
 
-@login_required
 def migrate_photos(request):
     # Get source credentials from social token (Google account)
+    if not request.user.is_authenticated:
+        messages.error(request, "You are not logged in. Please login to continue.")
+        return redirect("index")
     try:
         source_credentials = retrieve_credentials_for_user(request.user)
     except Exception as e:
