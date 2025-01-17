@@ -127,7 +127,7 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 
-LOGIN_REDIRECT_URL = '/gmail/delete_emails/'
+LOGIN_REDIRECT_URL = '/'
 # LOGIN_REDIRECT_URL = '/'  # Redirect after successful login
 LOGOUT_REDIRECT_URL = '/' 
 
