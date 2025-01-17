@@ -66,9 +66,15 @@ def migrate_photos(request):
     except Exception as e:
         messages.error(request, f"Error retrieving source credentials: {e}")
         return redirect('/accounts/google/login/?process=login')
-
+    creds = retrieve_credentials_for_user(request.user.id)
+    src_creds = {
+                        'token':creds.token, 'refresh_token':creds.refresh_token,
+                        'token_uri':creds.token_uri, 'client_id':creds.client_id,
+                        'client_secret':creds.client_secret, 'scopes':creds.scopes
+                                        }
+    
     page_token = request.GET.get('page_token')
-    photos, next_page_token = get_photos(source_credentials, page_token)
+    photos, next_page_token = get_photos(src_creds, page_token)
 
 
 
