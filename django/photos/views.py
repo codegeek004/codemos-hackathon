@@ -44,7 +44,7 @@ def retrieve_credentials_for_user(user):
 
         if creds.expired and creds.refresh_token:
             creds.refresh(Request())
-
+        return creds
 
 def migrate_photos(request):
 
