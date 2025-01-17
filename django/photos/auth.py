@@ -108,7 +108,7 @@ def destination_google_auth(request):
 
         # **Save destination email for later use**
 
-    flow = get_google_auth_flow('https://127.0.0.1:8000/photos/destination/auth/callback/')
+    flow = get_google_auth_flow('https://del.codemos.in/photos/destination/auth/callback/')
     authorization_url, state = flow.authorization_url(access_type='offline', prompt='select_account')
     return redirect(authorization_url)
 
@@ -120,7 +120,7 @@ def destination_google_auth_callback(request):
     if 'code' not in request.GET:
         return redirect('dest-oauth')
 
-    flow = get_google_auth_flow('https://127.0.0.1:8000/photos/destination/auth/callback/')
+    flow = get_google_auth_flow('https://del.codemos.in/photos/destination/auth/callback/')
     flow.fetch_token(authorization_response=request.build_absolute_uri())
     credentials = flow.credentials
     print('creds in destination auth callback', credentials)
