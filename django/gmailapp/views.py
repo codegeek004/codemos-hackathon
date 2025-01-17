@@ -25,6 +25,10 @@ from googleapiclient.errors import HttpError
 #adding explicitly this error 'HttpError'
 
 
+from googleapiclient.errors import HttpError 
+#adding explicitly this error 'HttpError'
+
+
 def index_view(request):
     return render(request, 'index.html')
 

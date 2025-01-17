@@ -12,14 +12,12 @@ import requests
 import io
 import json
 from django.contrib.auth.models import User
-
 from .tasks import migrate_all_photos_task, migrate_selected_photos_task
 from .utils import get_photos_service, download_photo, upload_photo, get_photos
 
 
 def google_auth_redirect(request):
     return redirect('socialaccount_login', provider='google')
-
 
 API_NAME = 'photoslibrary'
 API_VERSION = 'v1'
@@ -36,6 +34,8 @@ def retrieve_credentials_for_user(user):
         SCOPES = ['https://www.googleapis.com/auth/photoslibrary']
 
 
+
+
         creds = Credentials(
             token=social_token.token,
             refresh_token=social_token.token_secret,
@@ -47,27 +47,6 @@ def retrieve_credentials_for_user(user):
 
         if creds.expired and creds.refresh_token:
             creds.refresh(Request())
-
-
-
-
-        # Re-apply the required scope if necessary
-        if not creds.has_scopes(SCOPES):
-            creds = Credentials(
-                token=creds.token,
-                refresh_token=creds.refresh_token,
-                token_uri=creds.token_uri,
-                client_id=creds.client_id,
-                client_secret=creds.client_secret,
-                scopes=SCOPES  # Add the required scopes here
-            )        
-        return creds
-    except SocialAccount.DoesNotExist:
-        raise Exception("Google account not linked to this user.")
-    except SocialToken.DoesNotExist:
-        raise Exception("No Google token found for this user.")
-
-
 
 
 def migrate_photos(request):
@@ -91,6 +70,7 @@ def migrate_photos(request):
 
     page_token = request.GET.get('page_token')
     photos, next_page_token = get_photos(source_credentials, page_token)
+
 
 
 

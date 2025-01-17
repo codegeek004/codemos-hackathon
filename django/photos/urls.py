@@ -1,4 +1,3 @@
-
 from photos import views, auth
 from django.urls import include, path
 from photos import views
@@ -14,12 +13,14 @@ urlpatterns = [
      # Include allauth URLs (handles Google OAuth automatically)
 
 
+
     # path('accounts/', include('allauth.urls')),  # Allauth authentication URLs
     path('destination/oauth/', auth.dest_oauth, name='dest-oauth'),
     path('destination/auth/', auth.destination_google_auth, name='destination_google_auth'),  # Destination auth
     path('destination/auth/callback/', auth.destination_google_auth_callback, name='destination_google_auth_callback'),  # Destination callback
     # path('accounts/', include('allauth.urls')),  # Allauth authentication URLs
     
+
 
 
     # Logout view
