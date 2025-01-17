@@ -64,6 +64,7 @@ def retrieve_credentials_for_user(user):
 
 
 
+
 def migrate_photos(request):
     print('inside migrate photos')
     if not request.user.is_authenticated:
@@ -97,8 +98,10 @@ def migrate_photos(request):
 
         if action == 'migrate_all':
             print('inside migrate all')
+            creds = retrieve_credentials_for_user(request.user)
+            src_creds = {'token':creds.token, 'refresh_token':creds.refresh_token}
             if destination_credentials:
-                task = migrate_all_photos_task.delay(source_credentials, destination_credentials)
+                task = migrate_all_photos_task.delay(src_creds, destination_credentials)
                 messages.success(request, f"Migrating all photos. Task ID: {task.id}")
                 return redirect('migrate_photos')
 
