@@ -14,6 +14,20 @@ from django.core.mail import EmailMessage
 from .auth import check_token_validity
 from django.contrib.auth import logout
 
+from googleapiclient.errors import HttpError 
+#adding explicitly this error 'HttpError'
+
+from googleapiclient.errors import HttpError 
+#adding explicitly this error 'HttpError'
+
+
+from googleapiclient.errors import HttpError 
+#adding explicitly this error 'HttpError'
+
+
+from googleapiclient.errors import HttpError 
+#adding explicitly this error 'HttpError'
+
 
 from googleapiclient.errors import HttpError 
 #adding explicitly this error 'HttpError'
