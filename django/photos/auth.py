@@ -7,6 +7,7 @@ from google_auth_oauthlib.flow import Flow
 from django.contrib.auth import logout
 from django.shortcuts import render, redirect
 import requests
+import json
 CLIENT_SECRETS_FILE = "credentials.json"
 
 def get_google_auth_flow(redirect_uri):
@@ -170,8 +171,9 @@ def fetch_user_info(credentials):
             'https://www.googleapis.com/oauth2/v1/userinfo',
             headers={'Authorization': f'Bearer {credentials.token}'}
         )
-        response.raise_for_status()
-        return response.json()
+        #response.raise_for_status()
+        if response.status_code==200 and response.headers.get('Content-Type') == 'application/json':
+            return response.json()
     except requests.exceptions.RequestException as e:
         print(f"Error fetching user info: {e}")
         return None
