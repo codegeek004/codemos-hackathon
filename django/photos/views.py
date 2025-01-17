@@ -24,10 +24,10 @@ def google_auth_redirect(request):
 API_NAME = 'photoslibrary'
 API_VERSION = 'v1'
 
-# Utility function to retrieve Google credentials
+
 def retrieve_credentials_for_user(user):
     try:
-        # Get the social account for the user
+
         social_account = SocialAccount.objects.get(user=user, provider="google")
         
         social_token = SocialToken.objects.get(account=social_account)
@@ -42,27 +42,48 @@ def retrieve_credentials_for_user(user):
             client_secret="your-client-secret",
         )
 
+
         if creds.expired and creds.refresh_token:
             creds.refresh(Request())
+
+
+
+        if not creds.has_scopes(SCOPES):
+            creds = Credentials(
+                token=creds.token,
+                refresh_token=creds.refresh_token,
+                token_uri=creds.token_uri,
+                client_id=creds.client_id,
+                client_secret=creds.client_secret,
+                scopes=SCOPES  
+            )        
         return creds
-    except Exception as e:
-        raise e
+    except SocialAccount.DoesNotExist:
+        raise Exception("Google account not linked to this user.")
+    except SocialToken.DoesNotExist:
+        raise Exception("No Google token found for this user.")
+
+
+       
+    
 
 def migrate_photos(request):
-
-    # Get source credentials from social token (Google account)
+    print('inside migrate photos')
     if not request.user.is_authenticated:
         messages.error(request, "You are not logged in. Please login to continue.")
         return redirect("index")
+
     creds = retrieve_credentials_for_user(request.user.id)
-    if check_token_validity(creds.token) == False:
+    print('creds', creds)
+    if not check_token_validity(creds.token):
         request.session.flush()
         logout(request)
-        messages.warning(request, 'Your session was expired. login again to continue')
+        messages.warning(request, 'Your session has expired. Please log in again to continue.')
         return redirect('index')
+
     try:
         source_credentials = retrieve_credentials_for_user(request.user)
-
+        print('src crds', source_credentials)
     except Exception as e:
         messages.error(request, f"Error retrieving source credentials: {e}")
         return redirect('/accounts/google/login/?process=login')
@@ -75,10 +96,6 @@ def migrate_photos(request):
     
     page_token = request.GET.get('page_token')
     photos, next_page_token = get_photos(src_creds, page_token)
-
-
-
-
 
     destination_credentials = request.session.get('destination_credentials')
     print('dest creds', destination_credentials)
@@ -111,10 +128,20 @@ def migrate_photos(request):
                         'token_uri':creds.token_uri, 'client_id':creds.client_id,
                         'client_secret':creds.client_secret, 'scopes':creds.scopes
                                         }
+                
+
                 print('src creds', src_creds)
+
+
 
                 task = migrate_selected_photos_task.delay(src_creds, destination_credentials, selected_photo_ids)
                 print('on botom of task')
                 print(f"task                   {task}")
                 messages.success(request, f"Migrating selected photos. Task ID: {task.id}")
                 return redirect('migrate_photos')
+
+    return render(request, 'migrate_photos.html', {
+        'photos': photos,
+        'next_page_token': next_page_token
+    })
+
