@@ -16,8 +16,10 @@ from .tasks import migrate_all_photos_task, migrate_selected_photos_task
 from .utils import get_photos_service, download_photo, upload_photo, get_photos
 
 
+
 def google_auth_redirect(request):
     return redirect('socialaccount_login', provider='google')
+
 
 API_NAME = 'photoslibrary'
 API_VERSION = 'v1'
@@ -28,13 +30,9 @@ def retrieve_credentials_for_user(user):
         # Get the social account for the user
         social_account = SocialAccount.objects.get(user=user, provider="google")
         
-
         social_token = SocialToken.objects.get(account=social_account)
         print('social token are ',social_token)
         SCOPES = ['https://www.googleapis.com/auth/photoslibrary']
-
-
-
 
         creds = Credentials(
             token=social_token.token,
@@ -43,7 +41,6 @@ def retrieve_credentials_for_user(user):
             client_id="your-client-id.apps.googleusercontent.com",
             client_secret="your-client-secret",
         )
-
 
         if creds.expired and creds.refresh_token:
             creds.refresh(Request())
@@ -70,6 +67,7 @@ def migrate_photos(request):
 
     page_token = request.GET.get('page_token')
     photos, next_page_token = get_photos(source_credentials, page_token)
+
 
 
 
