@@ -45,6 +45,16 @@ def retrieve_credentials_for_user(user):
         if creds.expired and creds.refresh_token:
             creds.refresh(Request())
 
+        return creds  # Make sure to return the credentials object
+    except SocialAccount.DoesNotExist:
+        print("Social account not found for user.")
+        raise Exception("No social account found.")
+    except SocialToken.DoesNotExist:
+        print("Social token not found for user.")
+        raise Exception("No social token found.")
+    except Exception as e:
+        print(f"Error retrieving credentials: {e}")
+        raise e
 
 def migrate_photos(request):
 
