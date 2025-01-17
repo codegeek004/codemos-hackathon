@@ -12,11 +12,14 @@ import requests
 import io
 import json
 from django.contrib.auth.models import User
+
 from .tasks import migrate_all_photos_task, migrate_selected_photos_task
 from .utils import get_photos_service, download_photo, upload_photo, get_photos
 
+
 def google_auth_redirect(request):
     return redirect('socialaccount_login', provider='google')
+
 
 API_NAME = 'photoslibrary'
 API_VERSION = 'v1'
@@ -27,13 +30,11 @@ def retrieve_credentials_for_user(user):
         # Get the social account for the user
         social_account = SocialAccount.objects.get(user=user, provider="google")
         
-        # Get the associated social token
 
         social_token = SocialToken.objects.get(account=social_account)
         print('social token are ',social_token)
         SCOPES = ['https://www.googleapis.com/auth/photoslibrary']
 
-        # Build the credentials
 
         creds = Credentials(
             token=social_token.token,
@@ -43,8 +44,10 @@ def retrieve_credentials_for_user(user):
             client_secret="your-client-secret",
         )
 
+
         if creds.expired and creds.refresh_token:
             creds.refresh(Request())
+
 
 
 
@@ -63,6 +66,7 @@ def retrieve_credentials_for_user(user):
         raise Exception("Google account not linked to this user.")
     except SocialToken.DoesNotExist:
         raise Exception("No Google token found for this user.")
+
 
 
 
@@ -87,6 +91,7 @@ def migrate_photos(request):
 
     page_token = request.GET.get('page_token')
     photos, next_page_token = get_photos(source_credentials, page_token)
+
 
 
     destination_credentials = request.session.get('destination_credentials')
@@ -125,12 +130,3 @@ def migrate_photos(request):
                 print(f"task                   {task}")
                 messages.success(request, f"Migrating selected photos. Task ID: {task.id}")
                 return redirect('migrate_photos')
-
-    return render(request, 'migrate_photos.html', {
-        'photos': photos,
-        'next_page_token': next_page_token
-    })
-
-
-
-
