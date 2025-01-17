@@ -47,6 +47,7 @@ def retrieve_credentials_for_user(user):
             creds.refresh(Request())
 
 
+
         if not creds.has_scopes(SCOPES):
             creds = Credentials(
                 token=creds.token,
@@ -63,6 +64,8 @@ def retrieve_credentials_for_user(user):
         raise Exception("No Google token found for this user.")
 
 
+       
+    
 
 def migrate_photos(request):
     print('inside migrate photos')
@@ -84,9 +87,15 @@ def migrate_photos(request):
     except Exception as e:
         messages.error(request, f"Error retrieving source credentials: {e}")
         return redirect('/accounts/google/login/?process=login')
-
+    creds = retrieve_credentials_for_user(request.user.id)
+    src_creds = {
+                        'token':creds.token, 'refresh_token':creds.refresh_token,
+                        'token_uri':creds.token_uri, 'client_id':creds.client_id,
+                        'client_secret':creds.client_secret, 'scopes':creds.scopes
+                                        }
+    
     page_token = request.GET.get('page_token')
-    photos, next_page_token = get_photos(source_credentials, page_token)
+    photos, next_page_token = get_photos(src_creds, page_token)
 
     destination_credentials = request.session.get('destination_credentials')
     print('dest creds', destination_credentials)
@@ -97,8 +106,10 @@ def migrate_photos(request):
 
         if action == 'migrate_all':
             print('inside migrate all')
+            creds = retrieve_credentials_for_user(request.user)
+            src_creds = {'token':creds.token, 'refresh_token':creds.refresh_token}
             if destination_credentials:
-                task = migrate_all_photos_task.delay(source_credentials, destination_credentials)
+                task = migrate_all_photos_task.delay(src_creds, destination_credentials)
                 messages.success(request, f"Migrating all photos. Task ID: {task.id}")
                 return redirect('migrate_photos')
 
