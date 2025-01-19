@@ -11,7 +11,7 @@
 
     <!-- Sign In/Sign Out Logic (Top Right) -->
     <div class="logout-link" id="logoutnow">
-        <div class="navbar nav ms-auto" style="display: flex; justify-content: flex-end; width: 100%; position: relative;">
+        <div class="navbar nav ms-auto" style="display: flex; justify-content: flex-end; width: 100%; position: absolute;">
             {% if user.is_authenticated %}
                 <!-- If User is Authenticated (Sign-out Section) -->
                 <div class="nav-link-active">
@@ -19,7 +19,7 @@
                         <span class="material-symbols--person"></span>{{ user.username | title }}
                     </p>
                 </div>
-                <a class="nav-link active" aria-current="page" href="{% url 'logout_url' %}" style="color:black;">
+                <a class="nav-link active" aria-current="page" href="{% url 'logout_url' %}" style="color:black; margin-bottom: 10px;">
                     <strong>Signout</strong>
                 </a>
             {% else %}
