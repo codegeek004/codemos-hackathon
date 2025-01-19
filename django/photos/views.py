@@ -64,7 +64,10 @@ def migrate_photos(request):
     # Get source credentials from social token (Google account)
     try:
         source_credentials = retrieve_credentials_for_user(request.user)
+        print(source_credentials)
     except Exception as e:
+        print('exception aa gayaaa')
+
         messages.error(request, f"Error retrieving source credentials: {e}")
         return redirect('google_auth')
 
