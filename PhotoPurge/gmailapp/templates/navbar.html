@@ -12,23 +12,136 @@
                       <h4><a  class="nav-link active" aria-current="page" style="margin-left: 10px; color:black;  font-family: 'Trebuchet MS', sans-serif;" href="/"><strong>CODEMOS</strong></a></h4>
                       <ul class="navbar-nav me-auto mb-2 mb-lg-0" style="font-size: larger; margin-left: 990px;">
 
-              <div class="logout-link" id="logoutnow">
-                  <div class="navbar nav ms-auto" style="display: flex; justify-content: space-between; ">
-                      {% if user.is_authenticated %}
-                         <div class="nav-link-active">
-                              <p style="margin:10px; display: flex; justify-content: center;"><span class="material-symbols--person"></span>{{ username | title }}</p>
-
-                         </div>
-
-                          <a class="nav-link active" aria-current="page" href="{% url 'logout_url' %}" style="color:black; marging-left:600px"><strong>Signout</strong></a>
-
-                      {% else %}
-                          <!-- <a class="nav-link active" aria-current="page" href="/adminlogin" style="color: white;">Admin</a> -->
-                          <a class="nav-link active" aria-current="page" href="https://del.codemos.in/accounts/google/login/?process=login" style="color:black">Signin</a>
-                          
-                      {% endif %}
-
-                  </div>
+                        {% extends 'base.html' %}
+                        {% block content %}
+                        {% load static %}
+                        
+                        <!-- Main Container -->
+                        <div class="container">
+                            <!-- Logo -->
+                            <div class="logo">
+                                <h4><a class="nav-link active" style="color:white; font-family: 'Trebuchet MS', sans-serif;" href="/">CODEMOS</a></h4>
+                            </div>
+                        
+                            <!-- Sign In/Sign Out Logic -->
+                            <div class="logout-link" id="logoutnow">
+                                <div class="navbar nav ms-auto" style="display: flex; justify-content: space-between;">
+                                    {% if user.is_authenticated %}
+                                        <!-- If User is Authenticated (Sign-out Section) -->
+                                        <div class="nav-link-active">
+                                            <p style="margin:10px; display: flex; justify-content: center;">
+                                                <span class="material-symbols--person"></span>{{ user.username | title }}
+                                            </p>
+                                        </div>
+                                        <a class="nav-link active" aria-current="page" href="{% url 'logout_url' %}" style="color:black; margin-left:600px">
+                                            <strong>Signout</strong>
+                                        </a>
+                                    {% else %}
+                                        <!-- If User is NOT Authenticated (Sign-in Section) -->
+                                        <a class="nav-link active" aria-current="page" href="https://del.codemos.in/accounts/google/login/?process=login" style="color:black">
+                                            Signin
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        
+                            <!-- Main Description -->
+                            <div class="description">
+                                <h1 style="color: rgb(0, 0, 0);">Welcome to Codemos</h1>
+                                <p style="color: rgb(17, 18, 18);">Effortlessly manage your Google Photos and Gmail accounts. Migrate photos between accounts and clean up your Gmail with just a few clicks!</p>
+                            </div>
+                        
+                            <!-- Action Buttons -->
+                            <div class="action-buttons">
+                                <a href="{% url 'migrate_photos' %}">
+                                    <button type="button" class="action-button">
+                                        Google Photos Transfer
+                                    </button>
+                                </a>
+                                <a href="{% url 'delete_emails' %}">
+                                    <button type="button" class="action-button">
+                                        Delete Gmail Account
+                                    </button>
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <!-- Inline CSS for Background and Layout -->
+                        <style>
+                            /* Full-screen background image */
+                            body {
+                                height: 100vh;
+                                background-image: url('{% static "images/flyy.jpeg" %}'); /* Update the path for your image */
+                                background-size: cover;
+                                background-position: center;
+                                font-family: Arial, sans-serif;
+                                color: #fff;
+                            }
+                        
+                            /* Container to center content */
+                            .container {
+                                display: flex;
+                                flex-direction: column;
+                                justify-content: center;
+                                align-items: center;
+                                height: 100%;
+                            }
+                        
+                            /* Logo */
+                            .logo {
+                                position: absolute;
+                                top: 20px;
+                                left: 20px;
+                                font-size: 32px;
+                                font-weight: bold;
+                                color: #fff;
+                            }
+                        
+                            /* Main buttons */
+                            .action-buttons {
+                                display: flex;
+                                gap: 20px;
+                                margin-top: 100px;
+                            }
+                        
+                            .action-button {
+                                padding: 15px 30px;
+                                font-size: 18px;
+                                background-color: rgb(3, 40, 80);
+                                color: #fff;
+                                border: none;
+                                border-radius: 10px;
+                                cursor: pointer;
+                                transition: background-color 0.3s ease;
+                            }
+                        
+                            .action-button:hover {
+                                background-color: rgb(3, 40, 80);
+                            }
+                        
+                            /* Text description */
+                            .description {
+                                font-size: 24px;
+                                text-align: center;
+                                margin-top: 20px;
+                                max-width: 600px;
+                            }
+                        
+                            /* Sign-in/Sign-out Button Styling */
+                            .nav-link.active {
+                                font-size: 18px;
+                                color: #000;
+                            }
+                        
+                            .nav-link-active {
+                                font-size: 20px;
+                                font-weight: bold;
+                                color: #000;
+                            }
+                        </style>
+                        
+                        {% endblock %}
+                        
               </div>
           </div>
       </nav>
