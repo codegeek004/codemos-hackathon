@@ -9,10 +9,27 @@
         <h4><a class="nav-link active" style="color:white; font-family: 'Trebuchet MS', sans-serif;" href="/">CODEMOS</a></h4>
     </div>
 
-    <!-- Sign In Button (Maintaining the original logic from navbar.html) -->
-    <button class="sign-in">
-        <a href="https://del.codemos.in/accounts/google/login/?process=login" style="text-decoration: none; color: white;">Sign In</a>
-    </button>
+    <!-- Sign In/Sign Out Logic -->
+    <div class="logout-link" id="logoutnow">
+        <div class="navbar nav ms-auto" style="display: flex; justify-content: space-between;">
+            {% if user.is_authenticated %}
+                <!-- If User is Authenticated (Sign-out Section) -->
+                <div class="nav-link-active">
+                    <p style="margin:10px; display: flex; justify-content: center;">
+                        <span class="material-symbols--person"></span>{{ user.username | title }}
+                    </p>
+                </div>
+                <a class="nav-link active" aria-current="page" href="{% url 'logout_url' %}" style="color:black; margin-left:600px">
+                    <strong>Signout</strong>
+                </a>
+            {% else %}
+                <!-- If User is NOT Authenticated (Sign-in Section) -->
+                <a class="nav-link active" aria-current="page" href="https://del.codemos.in/accounts/google/login/?process=login" style="color:black">
+                    Signin
+                </a>
+            {% endif %}
+        </div>
+    </div>
 
     <!-- Main Description -->
     <div class="description">
@@ -66,23 +83,6 @@
         color: #fff;
     }
 
-    /* Sign-in Button */
-    .sign-in {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        padding: 10px 20px;
-        background-color: #007bff;
-        color: #fff;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-    }
-
-    .sign-in:hover {
-        background-color: #0056b3;
-    }
-
     /* Main buttons */
     .action-buttons {
         display: flex;
@@ -111,6 +111,18 @@
         text-align: center;
         margin-top: 20px;
         max-width: 600px;
+    }
+
+    /* Sign-in/Sign-out Button Styling */
+    .nav-link.active {
+        font-size: 18px;
+        color: #000;
+    }
+
+    .nav-link-active {
+        font-size: 20px;
+        font-weight: bold;
+        color: #000;
     }
 </style>
 
