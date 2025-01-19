@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Authentication</title>
+</head>
+<body>
+    <!-- Destination Account Authentication -->
+    <div>
+        <h2>Authenticate Destination Account</h2>
+        <p>Enter the email address for the destination Google account and click Authenticate:</p>
+        <form action="{% url 'destination_google_auth' %}" method="get">
+            <button type="submit">Authenticate Destination</button>
+        </form>
+    </div>
+
+    <hr>
+
+
+
+
+</body>
+</html>

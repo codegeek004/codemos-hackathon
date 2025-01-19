@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+
+   {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+  <br><br><h1 style="text-align: center;">Delete your emails</h3>
+    <a href="{% url 'recover_emails' %}" class="btn btn-primary" style= "margin-left: 460px; margin-top: 20px;" >Recover Deleted Emails</a>
+
+    {% if polling %}
+      <div style="text-align: center; margin-top: 20px;">
+            {% if task_status == "IN_PROGRESS" %}
+                <p>Your task is still in progress. Please wait...</p>
+                <meta http-equiv="refresh" content="25;url='{% url 'polling_view' task_id=task_id %}'">
+            {% elif task_status == "SUCCESS" %}
+                <p>Your task was completed successfully!</p>
+            {% elif task_status == "FAILURE" %}
+                <p>Your task failed. Please try again.</p>
+            {% endif %}
+      </div>
+
+    {% else %}
+    <form method="POST" action="{% url 'delete_emails' %}">
+      {% csrf_token %}
+      <br><br><h5 style="text-align:center">Choose Category</h5><br><br>
+      <select style="width: 180px; margin-left: 480px;"name="category" id="category">
+        <option value="CATEGORY_PROMOTIONS">Promotions</option>
+        <option value="CATEGORY_SOCIAL">Social</option>
+        <option value="CATEGORY_UPDATES">Updates</option>
+        <option value="CATEGORY_FORUMS">Forums</option>
+      </select>
+      <br><br><br>
+      <button style="margin-left:500px;" class="btn btn-primary" type="submit">Delete Emails</button>
+    </form>
+    {% endif %}
+
+
+
+    
+</div>
+{% endblock %}
