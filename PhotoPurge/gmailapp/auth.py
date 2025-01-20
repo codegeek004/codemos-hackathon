@@ -29,6 +29,36 @@ def check_token_validity(token):
 	else:
 		valid=False
 	return valid
+def refresh_google_token(user):
+    try:
+        social_token = SocialToken.objects.get(account__user=user, account__provider='google')
+        refresh_token = social_token.token_secret
+
+        social_app = SocialApp.objects.get(provider='google')
+        client_id = social_app.client_id
+        client_secret = social_app.secret
+
+        url = "https://oauth2.googleapis.com/token"
+        data = {
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "refresh_token": refresh_token,
+            "grant_type": "refresh_token"
+        }
+        response = requests.post(url, data=data)
+
+        if response.status_code == 200:
+            new_token = response.json()
+            social_token.token = new_token['access_token']
+            social_token.expires_at = new_token.get('expires_in')  # Update expiry time
+            social_token.save()
+            return True
+        else:
+            print("Failed to refresh token:", response.json())
+            return False
+    except SocialToken.DoesNotExist:
+        print("Social token not found for user.")
+        return False
 
 
 def logout_view(request):
