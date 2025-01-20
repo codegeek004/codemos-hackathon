@@ -4,6 +4,17 @@ from django.utils.timezone import now
 
 class CustomUser(AbstractUser):
     last_active = models.DateTimeField(default=now)
+    # Add related_name to avoid reverse accessor clash
+    groups = models.ManyToManyField(
+        'auth.Group',
+        related_name='customuser_set',  # Change the related name here
+        blank=True
+    )
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        related_name='customuser_set',  # Change the related name here
+        blank=True
+    )
 
 class TaskStatus(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE) 
