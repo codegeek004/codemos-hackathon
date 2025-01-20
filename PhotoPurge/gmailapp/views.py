@@ -17,20 +17,6 @@ from django.contrib.auth import logout
 from googleapiclient.errors import HttpError 
 #adding explicitly this error 'HttpError'
 
-from googleapiclient.errors import HttpError 
-#adding explicitly this error 'HttpError'
-
-
-from googleapiclient.errors import HttpError 
-#adding explicitly this error 'HttpError'
-
-
-from googleapiclient.errors import HttpError 
-#adding explicitly this error 'HttpError'
-
-
-from googleapiclient.errors import HttpError 
-#adding explicitly this error 'HttpError'
 
 
 def index_view(request):
@@ -39,6 +25,9 @@ def index_view(request):
 
 def delete_emails_view(request):
     try:
+        if not request.user.is_authenticated:
+            messages.error(request, "You are not logged in. Please login to continue.")
+            return redirect('index')
         creds = retrieve_credentials_for_user(request.user.id)
         if check_token_validity(creds.token) == False:
             request.session.flush()
@@ -46,9 +35,7 @@ def delete_emails_view(request):
             messages.warning(request, 'Your session was expired. login again to continue')
             return redirect('index')
 
-        if not request.user.is_authenticated:
-            messages.error(request, "You are not logged in. Please login to continue.")
-            return redirect('index')
+        
 
         if request.method == "GET":
             return render(request, "email_delete_form.html")
@@ -78,8 +65,6 @@ def delete_emails_view(request):
             # Redirect to check the task status using the task_id
             return redirect('check_task_status', task_id=task.id)
     
-
-
     except Exception as e:
         print(e)
         messages.error(request, f"An error occurred while processing your request. {e}")

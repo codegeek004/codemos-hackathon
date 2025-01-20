@@ -131,7 +131,7 @@ LOGIN_REDIRECT_URL = '/'
 # LOGIN_REDIRECT_URL = '/'  # Redirect after successful login
 LOGOUT_REDIRECT_URL = '/' 
 
-STATICFILES_DIRS =[BASE_DIR / "static"]
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -171,9 +171,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
-STATIC_ROOT = BASE_DIR / "staticfiles"
-STATIC_URL = 'static/'
+#STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
+
 
 
 # Default primary key field type
@@ -197,7 +199,7 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 CELERY_TASK_TRACK_STARTED = True
-CELERY_TASK_TIME_LIMIT = 30 * 60
+CELERY_TASK_TIME_LIMIT = 43200
 
 
 CSRF_TRUSTED_ORIGINS = [
@@ -213,4 +215,4 @@ EMAIL_HOST_PASSWORD = 'yfbq lrsg xfao hvmd'
 EMAIL_PORT = 587
 
 
-
+ALLAUTH_UI_THEME = "light"
