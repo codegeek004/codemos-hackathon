@@ -136,7 +136,7 @@ def migrate_photos(request):
 
                 task = migrate_selected_photos_task.delay(src_creds, destination_credentials, selected_photo_ids)
                 print('on botom of task')
-                print(f"task                   {task}")
+                print(f"task{task}")
                 messages.success(request, f"Migrating selected photos. Task ID: {task.id}")
                 return redirect('migrate_photos')
 
