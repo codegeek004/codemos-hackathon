@@ -64,8 +64,7 @@ def retrieve_credentials_for_user(user):
         raise Exception("No Google token found for this user.")
 
 
-       
-    
+
 
 def migrate_photos(request):
     print('inside migrate photos')
