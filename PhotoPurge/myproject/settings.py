@@ -214,4 +214,4 @@ EMAIL_HOST_PASSWORD = 'yfbq lrsg xfao hvmd'
 EMAIL_PORT = 587
 
 
-
+ALLAUTH_UI_THEME = "light"
