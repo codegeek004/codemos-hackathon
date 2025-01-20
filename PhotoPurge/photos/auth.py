@@ -8,7 +8,10 @@ from django.contrib.auth import logout
 from django.shortcuts import render, redirect
 import requests
 import json
-CLIENT_SECRETS_FILE = "credentials.json"
+# CLIENT_SECRETS_FILE = "credentials.json"
+#for local testing
+CLIENT_SECRETS_FILE = "credentials_local.json"
+
 
 def get_google_auth_flow(redirect_uri):
     print('get google auth flow mai gaya')
@@ -109,7 +112,9 @@ def destination_google_auth(request):
 
         # **Save destination email for later use**
 
-    flow = get_google_auth_flow('https://del.codemos.in/photos/destination/auth/callback/')
+    # flow = get_google_auth_flow('https://del.codemos.in/photos/destination/auth/callback/')
+    # for local testing
+    flow = get_google_auth_flow('https://127.0.0.1:8000/photos/destination/auth/callback/')
     authorization_url, state = flow.authorization_url(access_type='offline', prompt='select_account')
     return redirect(authorization_url)
 
@@ -121,7 +126,9 @@ def destination_google_auth_callback(request):
     if 'code' not in request.GET:
         return redirect('dest-oauth')
 
-    flow = get_google_auth_flow('https://del.codemos.in/photos/destination/auth/callback/')
+    # flow = get_google_auth_flow('https://del.codemos.in/photos/destination/auth/callback/')
+    # for local testing
+    flow = get_google_auth_flow('https://127.0.0.1:8000/photos/destination/auth/callback/')
     flow.fetch_token(authorization_response=request.build_absolute_uri())
     credentials = flow.credentials
     print('creds in destination auth callback', credentials)
@@ -135,6 +142,10 @@ def destination_google_auth_callback(request):
 
     # **Fetch user info to confirm token validity**
     userinfo = fetch_user_info(credentials)
+
+    if userinfo:
+        email = userinfo.get('email')
+        print('email', email)
     print('userinfo', userinfo)
     return redirect('migrate_photos')
 
