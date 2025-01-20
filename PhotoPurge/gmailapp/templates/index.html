@@ -50,13 +50,15 @@
             </button>
         </a>
     </div>
+    <div>
     {% if messages %}
-    <ul class="messages" style="color: #000;">
+    <ul class="messages" style="color: #000; ">
         {% for message in messages %}
             <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
         {% endfor %}
     </ul>
     {% endif %}
+    </div>
 </div>
 
 <!-- Inline CSS for Background and Layout -->
