@@ -51,7 +51,7 @@
         </a>
     </div>
     {% if messages %}
-    <ul class="messages">
+    <ul class="messages" style="color: #000;">
         {% for message in messages %}
             <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
         {% endfor %}
