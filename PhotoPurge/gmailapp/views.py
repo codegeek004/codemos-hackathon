@@ -39,6 +39,9 @@ def index_view(request):
 
 def delete_emails_view(request):
     try:
+        if not request.user.is_authenticated:
+            messages.error(request, "You are not logged in. Please login to continue.")
+            return redirect('index')
         creds = retrieve_credentials_for_user(request.user.id)
         if check_token_validity(creds.token) == False:
             request.session.flush()
@@ -46,9 +49,7 @@ def delete_emails_view(request):
             messages.warning(request, 'Your session was expired. login again to continue')
             return redirect('index')
 
-        if not request.user.is_authenticated:
-            messages.error(request, "You are not logged in. Please login to continue.")
-            return redirect('index')
+        
 
         if request.method == "GET":
             return render(request, "email_delete_form.html")
