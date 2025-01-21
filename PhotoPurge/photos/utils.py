@@ -98,6 +98,11 @@ def upload_photo(service, photo_data, file_name):
             print(f"Error uploading photos: {response.status_code}, {response.text}")
             return None
         response.raise_for_status()
+    except Exception as e:
+        print("exception is", e)
+
+    try:
+        
 
         upload_token = response.text
         print('upload tokens', upload_token)
