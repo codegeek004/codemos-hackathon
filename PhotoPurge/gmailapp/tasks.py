@@ -4,17 +4,21 @@ from .utils import retrieve_credentials_for_user
 import logging 
 from .models import TaskStatus, RecoverStatus
 import requests
+from django.core.mail import EmailMessage
 
 #with bind=True we can use self in the function
 @shared_task(bind=True)
-def delete_emails_task(self, user_id, category):
+def delete_emails_task(self, user_id, email, category):
     try:
 
         task_status, created = TaskStatus.objects.get_or_create(
             task_id=self.request.id,
             user_id=user_id
         )
+    except Exception as e:
+        return f"mera exception hai {e}"
 
+    try:
 
         task_status.status = "IN_PROGRESS"
         task_status.save()
@@ -59,6 +63,9 @@ def delete_emails_task(self, user_id, category):
         task_status.result = result_message
         task_status.deleted_count = deleted_count
         task_status.save()
+        message = f"Your {task_status.deleted_count} emails have been deleted successfully! {task_status.result}. Thanks for choosing CODEMOS"
+        email = EmailMessage('Emails deleted', message, to=[email])
+        email.send()
 
 
         return result_message, messages_list
@@ -68,11 +75,12 @@ def delete_emails_task(self, user_id, category):
         task_status.result = f"An error occurred: {e}"
         task_status.save()
 
+
         return task_status.result
 
 
 @shared_task(bind=True)
-def recover_emails_task(self, user_id):
+def recover_emails_task(self, user_id, email):
     try:
 
         task_status, created = RecoverStatus.objects.get_or_create(
@@ -129,6 +137,9 @@ def recover_emails_task(self, user_id):
         task_status.result = result_message
         task_status.recover_count = recover_count  
         task_status.save()
+        message = f"Your {task_status.recover_count} emails have been recovered successfully! {task_status.result}. Thanks for choosing CODEMOS"
+        email = EmailMessage('Emails deleted', message, to=[email])
+        email.send()
 
         return result_message, recover_count
 
