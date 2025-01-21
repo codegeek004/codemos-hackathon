@@ -51,7 +51,7 @@ def delete_emails_view(request):
             if category not in valid_categories:
                 return HttpResponse("Invalid category selected.", status=400)
 
-            task = delete_emails_task.delay(request.user.id, category)
+            task = delete_emails_task.delay(request.user.id, request.user.email, category)
 
             # Create TaskStatus object to track task progress
             TaskStatus.objects.create(
@@ -120,7 +120,7 @@ def recover_emails_from_trash_view(request):
 
     try:
 
-        task = recover_emails_task.delay(request.user.id)
+        task = recover_emails_task.delay(request.user.id, request.user.email)
 
         RecoverStatus.objects.create(
             task_id=task.id,
