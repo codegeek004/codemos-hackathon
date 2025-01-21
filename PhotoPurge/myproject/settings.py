@@ -95,10 +95,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'gmail',
-        #'USER': 'root',
-        #'PASSWORD': 'root',  
-        'USER': 'ajay',
-        'PASSWORD': 'Root@123',
+        'USER': 'root',
+        'PASSWORD': 'root',  
+        #'USER': 'ajay',
+        #'PASSWORD': 'Root@123',
         'HOST': 'localhost',
         'PORT': 3306,
     }
@@ -176,6 +176,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
 
 
 # Default primary key field type
