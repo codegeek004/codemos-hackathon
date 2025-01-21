@@ -98,7 +98,13 @@ def migrate_photos(request):
 
     destination_credentials = request.session.get('destination_credentials')
     print('dest creds', destination_credentials)
+
+    
+
     if request.method == 'POST' and 'action' in request.POST:
+        if not destination_credentials:
+            messages.error(request, 'Destination address not selected')
+            return redirect('migrate_photos')
 
         action = request.POST['action']
         print('inside post method', action)
@@ -135,7 +141,7 @@ def migrate_photos(request):
 
                 task = migrate_selected_photos_task.delay(request.user.id, request.user.email, src_creds, destination_credentials, selected_photo_ids)
                 print('on botom of task')
-                print(f"task                   {task}")
+                print(f"task{task}")
                 messages.success(request, f"Migrating selected photos. Task ID: {task.id}")
                 return redirect('migrate_photos')
 

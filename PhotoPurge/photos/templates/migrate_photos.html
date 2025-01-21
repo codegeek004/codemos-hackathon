@@ -1,48 +1,200 @@
-<h1>Google Photos Migration</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title style="color: rgb(0, 0, 0);">Google Photos Migration</title>
+    <style>
+        /* Global Styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7fc;
+            color: #333;
+        }
 
+        h1 {
+            text-align: center;
+            margin-top: 50px;
+            font-size: 36px;
+            color: #4A90E2;
+        }
 
-<a href="{% url 'destination_google_auth' %}"><button type="submit">Authenticate Destination</button></a>
- {% if messages %}
-    <ul class="messages">
-        {% for message in messages %}
-            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-        {% endfor %}
-    </ul>
-{% endif %}
+        /* Authentication Button */
+        .auth-button {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: #fff;
+            font-size: 16px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
 
+        .auth-button:hover {
+            background-color: #45a049;
+        }
 
+        /* Messages */
+        .messages-container {
+            margin-top: 20px;
+            text-align: center;
+        }
 
+        .messages {
+            list-style-type: none;
+            padding: 0;
+        }
 
-{% if success_all %}
-    <p>All photos have been successfully migrated!</p>
-{% elif success_selected %}
-    <p>Selected photos have been successfully migrated!</p>
-{% endif %}
+        .messages li {
+            display: inline-block;
+            background-color: #f44336;
+            color: white;
+            padding: 10px;
+            margin: 5px;
+            border-radius: 5px;
+        }
 
-<form method="POST">
-    {% csrf_token %}
-    <table>
-        <thead>
-            <tr>
-                <th>Select</th>
-                <th>Preview</th>
-                <th>File Name</th>
-            </tr>
-        </thead>
-        <tbody>
+        /* Success Message */
+        .success-message {
+            text-align: center;
+            font-size: 18px;
+            color: green;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        /* Photo Form */
+        .photo-form {
+            margin: 20px auto;
+            max-width: 90%;
+            width: 1200px;
+        }
+
+        /* Photo Grid */
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .photo-item {
+            text-align: center;
+        }
+
+        .photo-checkbox {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .photo-image {
+            width: 100%;
+            max-width: 150px;
+            height: auto;
+            border-radius: 8px;
+            transition: transform 0.3s ease;
+        }
+
+        .photo-image:hover {
+            transform: scale(1.1);
+        }
+
+        /* Buttons */
+        .button-container {
+            text-align: center;
+        }
+
+        .migrate-button {
+            background-color: #0f4b8f;
+            color: white;
+            font-size: 16px;
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .migrate-button:hover {
+            background-color: #032344;
+        }
+
+        /* Next Page Button */
+        .next-page-button {
+            display: inline-block;
+            background-color: #2196F3;
+            color: white;
+            font-size: 16px;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+        }
+
+        .next-page-button:hover {
+            background-color: #1E88E5;
+        }
+
+        /* Responsiveness */
+        @media (max-width: 768px) {
+            .photo-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Google Photos Migration</h1>
+
+    <a href="{% url 'destination_google_auth' %}">
+        <button class="auth-button"> Please Authenticate Destination</button>
+    </a>
+
+    {% if messages %}
+        <div class="messages-container">
+            <ul class="messages">
+                {% for message in messages %}
+                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    {% if success_all %}
+        <p class="success-message">All photos have been successfully migrated!</p>
+    {% elif success_selected %}
+        <p class="success-message">Selected photos have been successfully migrated!</p>
+    {% endif %}
+
+    <form method="POST" class="photo-form">
+        {% csrf_token %}
+        <div class="photo-grid">
             {% for photo in photos %}
-                <tr>
-                    <td><input type="checkbox" name="selected_photos" value="{{ photo.id }}"></td>
-                    <td><img src="{{ photo.baseUrl }}=s150" alt="{{ photo.filename }}"></td>
-                    <td>{{ photo.filename }}</td>
-                </tr>
+                <div class="photo-item">
+                    <input type="checkbox" name="selected_photos" value="{{ photo.id }}" class="photo-checkbox">
+                    <img src="{{ photo.baseUrl }}=s150" alt="{{ photo.filename }}" class="photo-image">
+                </div>
             {% endfor %}
-        </tbody>
-    </table>
-    <button type="submit" name="action" value="migrate_all">Migrate All Photos</button>
-    <button type="submit" name="action" value="migrate_selected">Migrate Selected Photos</button>
-</form>
+        </div>
+        <div class="button-container">
+            <button type="submit" name="action" value="migrate_all" class="migrate-button">Migrate All Photos</button>
+            <button type="submit" name="action" value="migrate_selected" class="migrate-button">Migrate Selected Photos</button>
+        </div>
+    </form>
 
-{% if next_page_token %}
-    <a href="?page_token={{ next_page_token }}">Next Page</a>
-{% endif %}
+    {% if next_page_token %}
+        <a href="?page_token={{ next_page_token }}" class="next-page-button">Next Page</a>
+    {% endif %}
+
+</body>
+</html>

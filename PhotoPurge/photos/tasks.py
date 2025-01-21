@@ -13,6 +13,7 @@ def migrate_all_photos_task(self, user_id, email_id, source_credentials, destina
             task_id=self.request.id,
             user_id=user_id,
         )
+
         task_status.status = "IN_PROGRESS"
         task_status.save()
 
@@ -77,6 +78,7 @@ def migrate_all_photos_task(self, user_id, email_id, source_credentials, destina
         task_status.result = f"Error: {e}"
         task_status.save()
         raise self.retry(exc=e)
+
 
 
 @shared_task(bind=True)

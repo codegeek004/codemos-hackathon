@@ -12,23 +12,7 @@
                       <h4><a  class="nav-link active" aria-current="page" style="margin-left: 10px; color:black;  font-family: 'Trebuchet MS', sans-serif;" href="/"><strong>CODEMOS</strong></a></h4>
                       <ul class="navbar-nav me-auto mb-2 mb-lg-0" style="font-size: larger; margin-left: 990px;">
 
-              <div class="logout-link" id="logoutnow">
-                  <div class="navbar nav ms-auto" style="display: flex; justify-content: space-between; ">
-                      {% if user.is_authenticated %}
-                         <div class="nav-link-active">
-                              <p style="margin:10px; display: flex; justify-content: center;"><span class="material-symbols--person"></span>{{ username | title }}</p>
 
-                         </div>
-
-                          <a class="nav-link active" aria-current="page" href="{% url 'logout_url' %}" style="color:black; marging-left:600px"><strong>Signout</strong></a>
-
-                      {% else %}
-                          <!-- <a class="nav-link active" aria-current="page" href="/adminlogin" style="color: white;">Admin</a> -->
-                          <a class="nav-link active" aria-current="page" href="https://del.codemos.in/accounts/google/login/?process=login" style="color:black">Signin</a>
-                          
-                      {% endif %}
-
-                  </div>
               </div>
           </div>
       </nav>

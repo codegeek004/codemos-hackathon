@@ -17,20 +17,6 @@ from django.contrib.auth import logout
 from googleapiclient.errors import HttpError 
 #adding explicitly this error 'HttpError'
 
-from googleapiclient.errors import HttpError 
-#adding explicitly this error 'HttpError'
-
-
-from googleapiclient.errors import HttpError 
-#adding explicitly this error 'HttpError'
-
-
-from googleapiclient.errors import HttpError 
-#adding explicitly this error 'HttpError'
-
-
-from googleapiclient.errors import HttpError 
-#adding explicitly this error 'HttpError'
 
 
 def index_view(request):
@@ -65,7 +51,7 @@ def delete_emails_view(request):
             if category not in valid_categories:
                 return HttpResponse("Invalid category selected.", status=400)
 
-            task = delete_emails_task.delay(request.user.id, category)
+            task = delete_emails_task.delay(request.user.id, request.user.email, category)
 
             # Create TaskStatus object to track task progress
             TaskStatus.objects.create(
@@ -79,8 +65,6 @@ def delete_emails_view(request):
             # Redirect to check the task status using the task_id
             return redirect('check_task_status', task_id=task.id)
     
-
-
     except Exception as e:
         print(e)
         messages.error(request, f"An error occurred while processing your request. {e}")
@@ -136,7 +120,7 @@ def recover_emails_from_trash_view(request):
 
     try:
 
-        task = recover_emails_task.delay(request.user.id)
+        task = recover_emails_task.delay(request.user.id, request.user.email)
 
         RecoverStatus.objects.create(
             task_id=task.id,
