@@ -41,7 +41,6 @@ def migrate_all_photos_task(self, user_id, email_id, source_credentials, destina
     task_status.save()
 
     message = f"{len(all_photos)} migrated from your account. Thanks for choosing CODEMOS"
-    print('lwgbksgbksbgklsbglksbkjbg', request.user.email)
     email = EmailMessage('Migrated photos', message, to=[email_id])
     email.send()
     return result_message  # Return the count of migrated photos
