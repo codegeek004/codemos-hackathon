@@ -99,7 +99,11 @@ def migrate_photos(request):
 
     destination_credentials = request.session.get('destination_credentials')
     print('dest creds', destination_credentials)
+
     if request.method == 'POST' and 'action' in request.POST:
+        if not destination_credentials:
+            messages.error(request, 'Destination address not selected')
+            return redirect('migrate_photos')
 
         action = request.POST['action']
         print('inside post method', action)
