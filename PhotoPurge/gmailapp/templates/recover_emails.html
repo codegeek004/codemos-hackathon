@@ -1,17 +1,80 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Email Recovery Status</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7fc;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 400px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #4CAF50;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 16px;
+            margin: 20px 0;
+        }
+
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+
+        a {
+            color: #4CAF50;
+            text-decoration: none;
+            font-size: 16px;
+            padding: 10px 20px;
+            border: 2px solid #4CAF50;
+            border-radius: 5px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        a:hover {
+            background-color: #4CAF50;
+            color: white;
+        }
+    </style>
 </head>
 <body>
-    <h1>Email Recovery Status</h1>
-    
-    {% if success %}
-        <p style="color:green;">{{ success }}</p>
-    {% elif error %}
-        <p style="color:red;">{{ error }}</p>
-    {% endif %}
-    
-    <a href="{% url 'index' %}">Back to Homepage</a>
+    <div class="container">
+        <h1>Email Recovery Status</h1>
+        
+        {% if success %}
+            <p class="success">{{ success }}</p>
+        {% elif error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+        
+        <a href="{% url 'index' %}">Back to Homepage</a>
+    </div>
 </body>
 </html>
+
