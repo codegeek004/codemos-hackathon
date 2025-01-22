@@ -3,6 +3,7 @@ from django.utils import timezone
 from allauth.socialaccount.models import SocialToken
 
 class TokenRefreshMiddleware:
+    print('refresh token middleware initiated')
     def __init__(self, get_response):
         self.get_response = get_response
 
