@@ -3,8 +3,11 @@ from django.contrib.auth.models import AbstractUser
 from django.utils.timezone import now
 from django.contrib.auth.models import User
 
+class CustomUser(AbstractUser):
+    last_active = models.DateTimeField(null=True, blank=True, default=now)
+
 class TaskStatus(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE) 
+    user = models.ForeignKey('gmailapp.CustomUser', on_delete=models.CASCADE) 
     task_id = models.CharField(max_length=200, unique=True)
     status = models.CharField(max_length=40, default="PENDING")
     result = models.TextField(null=True, blank=True)
@@ -12,7 +15,7 @@ class TaskStatus(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 class RecoverStatus(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)  
+    user = models.ForeignKey('gmailapp.CustomUser', on_delete=models.CASCADE)  
     task_id = models.CharField(max_length=200, unique=True)
     status = models.CharField(max_length=40, default="PENDING")
     result = models.TextField(null=True, blank=True)
