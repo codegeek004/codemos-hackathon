@@ -5,22 +5,24 @@ import requests
 from django.contrib.auth import logout
 from django.shortcuts import redirect
 
+# to blacklist the token when user logs out. the logout view is defined below.
 def blacklist_token(token):
+	# url to revoke the token
 	url = 'https://oauth2.googleapis.com/revoke'
 	payload = {'token': token}
-	print('payload', payload)
 	headers = {'content-type': 'application/x-www-form-urlencoded'}
-	print('headers', headers)
 
 	response = requests.post(url, data=payload, headers=headers)
-	print('response', response)
-	print('response text', response.text)
+	
 	if response.status_code == 200:
 		return "Token blacklist successful"
+	
 	else:
 		return "Something went wrong"
 
+# to check the validity of token
 def check_token_validity(token):
+	# url to get the info of token
 	url = f'https://oauth2.googleapis.com/tokeninfo?access_token={token}'
 	response = requests.get(url)
 
@@ -29,6 +31,8 @@ def check_token_validity(token):
 	else:
 		valid=False
 	return valid
+
+# this view works with middleware. If the user is active on the website, it will refresh the token using the last_active field from the gmailapp_customuser table
 def refresh_google_token(user):
 	print('inside refresh google access token')
 	try:
