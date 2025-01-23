@@ -4,6 +4,7 @@ from .models import MigrationStatus
 from django.core.mail import EmailMessage
 import logging
 logger = logging.getLogger(__name__)
+import time
 
 @shared_task(bind=True, default_retry_delay=60, max_retries=3)
 def migrate_all_photos_task(self, user_id, email_id, source_credentials, destination_credentials):
@@ -32,6 +33,7 @@ def migrate_all_photos_task(self, user_id, email_id, source_credentials, destina
                 task_status.status = "FAILED"
                 task_status.result = f"Error fetching photos: {e}"
                 task_status.save()
+
                 raise self.retry(exc=e)
 
             all_photos.extend(photos)
@@ -47,6 +49,7 @@ def migrate_all_photos_task(self, user_id, email_id, source_credentials, destina
                         task_status.migrated_count += 1
                         task_status.save()
                         migrated_count += 1
+                        time.sleep(10)
                 except Exception as e:
                     logger.error(f"Failed to migrate photo {file_name}: {e}")
                     # Log and continue migrating other photos
