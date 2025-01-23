@@ -3,6 +3,7 @@ from .utils import get_photos_service, download_photo, upload_photo, get_photos
 from .models import MigrationStatus
 from django.core.mail import EmailMessage
 
+
 @shared_task(bind=True)
 def migrate_all_photos_task(self, user_id, email_id, source_credentials, destination_credentials):
     
@@ -15,9 +16,23 @@ def migrate_all_photos_task(self, user_id, email_id, source_credentials, destina
     task_status.save()
 
 
+<<<<<<< HEAD
     destination_service = get_photos_service(destination_credentials)
     current_page_token = None
     all_photos = []
+=======
+        # Paginate through source photos
+        while True:
+            try:
+                photos, next_page_token = get_photos(source_credentials, current_page_token)
+            except Exception as e:
+                logger.error(f"Failed to fetch photos: {e}")
+                task_status.status = "FAILED"
+                task_status.result = f"Error fetching photos: {e}"
+                task_status.save()
+
+                raise self.retry(exc=e)
+>>>>>>> 3e5d234f (added sleep timer for this to avoid rate limiting)
 
     while True:
         photos, next_page_token = get_photos(source_credentials, current_page_token)
@@ -30,8 +45,23 @@ def migrate_all_photos_task(self, user_id, email_id, source_credentials, destina
             if photo_data:
                 upload_photo(destination_service, photo_data, file_name)
 
+<<<<<<< HEAD
         if not next_page_token:
             break
+=======
+                try:
+                    photo_data = download_photo(file_url)
+                    if photo_data:
+                        upload_photo(destination_service, photo_data, file_name)
+                        task_status.migrated_count += 1
+                        task_status.save()
+                        migrated_count += 1
+                        time.sleep(10)
+                except Exception as e:
+                    logger.error(f"Failed to migrate photo {file_name}: {e}")
+                    # Log and continue migrating other photos
+                    continue
+>>>>>>> 3e5d234f (added sleep timer for this to avoid rate limiting)
 
     result_message = f"Migrated {len(all_photos)} photos"
 
