@@ -1,9 +1,11 @@
-from allauth.socialaccount.models import SocialAccount, SocialToken
+from allauth.socialaccount.models import SocialAccount, SocialToken, SocialApp
 from django.contrib import messages
 from .utils import retrieve_credentials_for_user
 import requests
 from django.contrib.auth import logout
 from django.shortcuts import redirect
+import datetime
+from django.utils.timezone import now
 
 # to blacklist the token when user logs out. the logout view is defined below.
 def blacklist_token(token):
@@ -36,12 +38,13 @@ def check_token_validity(token):
 def refresh_google_token(user):
 	print('inside refresh google access token')
 	try:
-		social_token = SocialToken.objects.get(account__user=user, account__provider='google')
-		refresh_token = social_token.token_secret
 
-		social_app = SocialApp.objects.get(provider='google')
-		client_id = social_app.client_id
-		client_secret = social_app.secret
+		creds = retrieve_credentials_for_user(user)
+		client_id = creds.client_id
+		client_secret = creds.client_secret
+		refresh_token = creds.refresh_token
+
+		social_token = SocialToken.objects.get(token=creds.token)
 
 		url = "https://oauth2.googleapis.com/token"
 		data = {
@@ -56,7 +59,9 @@ def refresh_google_token(user):
 			print('token successfully refreshed')
 			new_token = response.json()
 			social_token.token = new_token['access_token']
-			social_token.expires_at = new_token.get('expires_in')  # Update expiry time
+			expires_in = new_token.get('expires_in')
+			if expires_in:
+				social_token.expires_at = now() + datetime.timedelta(seconds=expires_in)  
 			social_token.save()
 			return True
 		else:
