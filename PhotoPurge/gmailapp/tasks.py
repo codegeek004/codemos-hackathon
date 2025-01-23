@@ -10,7 +10,7 @@ from django.core.mail import EmailMessage
 @shared_task(bind=True)
 def delete_emails_task(self, user_id, email, category):
     try:
-
+        # task_status variable creates a new object of TaskStatus class or if it already existing it fetches its data by task_id and user_id and created is boolean variable which returns True or False for created or not created
         task_status, created = TaskStatus.objects.get_or_create(
             task_id=self.request.id,
             user_id=user_id
@@ -19,13 +19,15 @@ def delete_emails_task(self, user_id, email, category):
         return f"mera exception hai {e}"
 
     try:
-
+        
         task_status.status = "IN_PROGRESS"
         task_status.save()
-
+        
+        # fetch credentials as dictionary from utils module
         creds = retrieve_credentials_for_user(user_id)
+        # builds service for gmail api
         service = build("gmail", "v1", credentials=creds)
-
+        
         query = f"category:{category.split('_')[1].lower()}"
         deleted_count = 0
         page_token = None
