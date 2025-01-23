@@ -1,11 +1,11 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from django.utils.timezone import now
+from django.utils.timezone import now, localtime
 from django.contrib.auth.models import User
 
 
 class CustomUser(AbstractUser):
-    last_active = models.DateTimeField(null=True, blank=True, default=now)
+    last_active = models.DateTimeField(null=True, blank=True, default=localtime(now()))
 
 # It keeps track of deleted emails
 class TaskStatus(models.Model):
