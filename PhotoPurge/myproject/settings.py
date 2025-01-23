@@ -49,7 +49,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.google',
     "widget_tweaks",
     "slippers",
-    #https
+    #https for local development
     'sslserver',
 
 ]
@@ -60,11 +60,11 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',  # Must be before custom middleware
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    "allauth.account.middleware.AccountMiddleware", 
-
+    'allauth.account.middleware.AccountMiddleware',
+    'gmailapp.middleware.TokenRefreshMiddleware',
 ]
 
 ROOT_URLCONF = 'myproject.urls'
@@ -91,12 +91,13 @@ WSGI_APPLICATION = 'myproject.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'gmail',
-        'USER': 'ajay',
-        'PASSWORD': 'Root@123',
+        'USER': 'root',
+        'PASSWORD': 'root',
         'HOST': 'localhost',
         'PORT': 3306,
     }
@@ -169,11 +170,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
-#STATIC_ROOT = BASE_DIR / "staticfiles"
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
-
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
 
 
@@ -187,12 +186,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE =False
 CSRF_COOKIE_HTTPONLY = True
- # Set to True in production
-SESSION_COOKIE_SECURE = False  # Set to True in production
-#CORS_ALLOWED_ORIGINS = [
-    #'http://localhost:8000',
-    #]
+SESSION_COOKIE_SECURE = True
 
+#configuration for celery redis message queue working in background for executing tasks defined in tasks module of both apps
 CELERY_BROKER_URL = 'redis://localhost:6379/0'  # URL for Redis
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
@@ -215,6 +211,8 @@ EMAIL_PORT = 587
 
 
 ALLAUTH_UI_THEME = "light"
+
+#custom user model
 AUTH_USER_MODEL = 'gmailapp.CustomUser'
 
 
