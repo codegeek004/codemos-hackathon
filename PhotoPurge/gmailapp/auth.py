@@ -1,4 +1,4 @@
-from allauth.socialaccount.models import SocialAccount, SocialToken, SocialApp
+from allauth.socialaccount.models import SocialAccount, SocialApp, SocialToken
 from django.contrib import messages
 from .utils import retrieve_credentials_for_user
 import requests
