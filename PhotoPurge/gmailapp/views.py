@@ -60,10 +60,10 @@ def delete_emails_view(request):
                 status="IN_PROGRESS"
             )
 
-            messages.success(request, "Your email deletion request has been started. You will be notified upon completion.")
+            messages.success(request, "Your email deletion request has been started. You will get an email  notification upon completion.")
             
             # Redirect to check the task status using the task_id
-            return redirect('check_task_status', task_id=task.id)
+            return render(request, 'email_delete_form.html')
     
     except Exception as e:
         print(e)
