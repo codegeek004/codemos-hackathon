@@ -4,7 +4,10 @@ from .utils import retrieve_credentials_for_user
 import logging 
 from .models import TaskStatus, RecoverStatus
 import requests
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMessage 
+from .auth import check_token_validity, refresh_google_token  
+import time
+from datetime import datetime, timezone
 
 #with bind=True we can use self in the function
 @shared_task(bind=True)
@@ -24,7 +27,23 @@ def delete_emails_task(self, user_id, email, category):
         task_status.save()
         
         # fetch credentials as dictionary from utils module
-        creds = retrieve_credentials_for_user(user_id)
+        try:
+
+            creds = retrieve_credentials_for_user(user_id)
+            if creds.expiry and isinstance(creds.expiry, str):
+                creds.expiry = datetime.strptime(creds.expiry.replace(' ', 'T'), '%Y-%m-%dT%H:%M:%S.%f')
+
+            if not check_token_validity(creds.token):
+                refresh_google_token(user_id)
+                task_status.result = "Refreshing token"
+                task_status.save()
+                time.sleep(15)
+
+    # Re-fetch updated credentials after refresh
+                creds = retrieve_credentials_for_user(user_id)
+        except Exception as e:
+            return f"kjsgbksjbgksb {e}"
+
         # builds service for gmail api
         service = build("gmail", "v1", credentials=creds)
         
@@ -53,6 +72,7 @@ def delete_emails_task(self, user_id, email, category):
                         "addLabelIds": ["TRASH"]
                     }).execute()
                 deleted_count += 1
+                time.sleep(10)
 
             page_token = results.get("nextPageToken")
             if not page_token:
