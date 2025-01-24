@@ -36,43 +36,39 @@ def check_token_validity(token):
 
 # this view works with middleware. If the user is active on the website, it will refresh the token using the last_active field from the gmailapp_customuser table
 def refresh_google_token(user):
-	print('inside refresh google access token')
-	try:
+    try:
+        social_token = SocialToken.objects.get(account__user=user, account__provider='google')
+        if social_token.token_secret:
+            refresh_token = social_token.token_secret
+            client_id = social_token.app.client_id
+            client_secret = social_token.app.secret
 
-		creds = retrieve_credentials_for_user(user)
-		client_id = creds.client_id
-		client_secret = creds.client_secret
-		refresh_token = creds.refresh_token
+            token_url = 'https://oauth2.googleapis.com/token'
+            data = {
+                'client_id': client_id,
+                'client_secret': client_secret,
+                'refresh_token': refresh_token,
+                'grant_type': 'refresh_token',
+            }
 
-		social_token = SocialToken.objects.get(token=creds.token)
-
-		url = "https://oauth2.googleapis.com/token"
-		data = {
-			"client_id": client_id,
-			"client_secret": client_secret,
-			"refresh_token": refresh_token,
-			"grant_type": "refresh_token"
-		}
-		response = requests.post(url, data=data)
-
-		if response.status_code == 200:
-			print('token successfully refreshed')
-			new_token = response.json()
-			social_token.token = new_token['access_token']
-			expires_in = new_token.get('expires_in')
-			if expires_in:
-				social_token.expires_at = now() + datetime.timedelta(seconds=expires_in)
-			social_token.save()
-			email = EmailMessage('token refreshed', 'token refreshed', to = 'codegeek004@gmail.com')
-            email.send()
-            return True
-		else:
-			print("Failed to refresh token:", response.json())
-			return False
-	except SocialToken.DoesNotExist:
-		print("Social token not found for user.")
-		return False
-
+            response = requests.post(token_url, data=data)
+            if response.status_code == 200:
+                new_token_data = response.json()
+                social_token.token = new_token_data['access_token']
+                expires_in = new_token_data.get('expires_in')
+                if expires_in:
+                    social_token.expires_at = timezone.now() + timedelta(seconds=expires_in)
+                social_token.save()
+                return True
+            else:
+                print("Failed to refresh token:", response.json())
+                return False
+        else:
+            print("No refresh token available.")
+            return False
+    except SocialToken.DoesNotExist:
+        print("Social token not found for user.")
+        return False
 
 def logout_view(request):
 	try:
