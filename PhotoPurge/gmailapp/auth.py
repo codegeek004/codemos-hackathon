@@ -1,12 +1,14 @@
 from allauth.socialaccount.models import SocialAccount, SocialApp, SocialToken
+from google.oauth2.credentials import Credentials
 from django.contrib import messages
 from .utils import retrieve_credentials_for_user
 import requests
 from django.contrib.auth import logout
 from django.shortcuts import redirect
-import datetime
-from django.utils.timezone import now, localtime
 from django.core.mail import EmailMessage
+from google.auth.transport.requests import Request
+from datetime import datetime, timezone
+
 # to blacklist the token when user logs out. the logout view is defined below.
 def blacklist_token(token):
 	# url to revoke the token
@@ -35,40 +37,33 @@ def check_token_validity(token):
 	return valid
 
 # this view works with middleware. If the user is active on the website, it will refresh the token using the last_active field from the gmailapp_customuser table
-def refresh_google_token(user):
+def refresh_google_token(user_id):
     try:
-        social_token = SocialToken.objects.get(account__user=user, account__provider='google')
-        if social_token.token_secret:
-            refresh_token = social_token.token_secret
-            client_id = social_token.app.client_id
-            client_secret = social_token.app.secret
+        creds = retrieve_credentials_for_user(user_id)
 
-            token_url = 'https://oauth2.googleapis.com/token'
-            data = {
-                'client_id': client_id,
-                'client_secret': client_secret,
-                'refresh_token': refresh_token,
-                'grant_type': 'refresh_token',
-            }
+        if creds and creds.expiry and creds.refresh_token:
+            # Ensure `creds.expiry` is a datetime object
+            if isinstance(creds.expiry, str):
+                creds.expiry = datetime.strptime(creds.expiry, '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=timezone.utc)
 
-            response = requests.post(token_url, data=data)
-            if response.status_code == 200:
-                new_token_data = response.json()
-                social_token.token = new_token_data['access_token']
-                expires_in = new_token_data.get('expires_in')
-                if expires_in:
-                    social_token.expires_at = timezone.now() + timedelta(seconds=expires_in)
+            # Refresh token only if expired
+            if creds.expiry < datetime.now(timezone.utc):
+                creds.refresh(Request())
+
+                # Update token in SocialToken model
+                social_account = SocialAccount.objects.get(user_id=user_id, provider='google')
+                social_token = SocialToken.objects.get(account=social_account)
+
+                social_token.token = creds.token
+                social_token.expires_at = creds.expiry
                 social_token.save()
-                return True
-            else:
-                print("Failed to refresh token:", response.json())
-                return False
-        else:
-            print("No refresh token available.")
-            return False
-    except SocialToken.DoesNotExist:
-        print("Social token not found for user.")
-        return False
+
+                return creds.token
+    except Exception as e:
+        print('Exception during token refresh:', e)
+
+    return None
+
 
 def logout_view(request):
 	try:
