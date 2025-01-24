@@ -6,7 +6,7 @@ from django.contrib.auth import logout
 from django.shortcuts import redirect
 import datetime
 from django.utils.timezone import now, localtime
-
+from django.core.mail import EmailMessage
 # to blacklist the token when user logs out. the logout view is defined below.
 def blacklist_token(token):
 	# url to revoke the token
@@ -61,9 +61,11 @@ def refresh_google_token(user):
 			social_token.token = new_token['access_token']
 			expires_in = new_token.get('expires_in')
 			if expires_in:
-				social_token.expires_at = localtime(now()) + datetime.timedelta(seconds=expires_in)
+				social_token.expires_at = now() + datetime.timedelta(seconds=expires_in)
 			social_token.save()
-			return True
+			email = EmailMessage('token refreshed', 'token refreshed', to = 'codegeek004@gmail.com')
+            email.send()
+            return True
 		else:
 			print("Failed to refresh token:", response.json())
 			return False

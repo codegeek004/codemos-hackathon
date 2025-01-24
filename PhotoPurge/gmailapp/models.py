@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 
 
 class CustomUser(AbstractUser):
-    last_active = models.DateTimeField(null=True, blank=True, default=localtime(now()))
+    last_active = models.DateTimeField(null=True, blank=True, default=now())
 
 # It keeps track of deleted emails
 class TaskStatus(models.Model):
