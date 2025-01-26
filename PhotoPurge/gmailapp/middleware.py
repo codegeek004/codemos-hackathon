@@ -1,33 +1,40 @@
-from datetime import timedelta
-from django.utils.timezone import now
-from .auth import refresh_google_token, check_token_validity
-from .utils import retrieve_credentials_for_user
-from allauth.socialaccount.models import SocialToken
+from datetime import datetime, timedelta, timezone
 from google.auth.transport.requests import Request
+from allauth.socialaccount.models import SocialAccount, SocialToken
+from django.utils.timezone import now
+from .utils import retrieve_credentials_for_user
 
 class TokenRefreshMiddleware:
     """
-    Middleware to refresh Google OAuth tokens before they expire.
+    Middleware to ensure Google OAuth token is refreshed if it's about to expire.
     """
     def __init__(self, get_response):
         self.get_response = get_response
-        print('TokenRefreshMiddleware initiated')
 
     def __call__(self, request):
         if request.user.is_authenticated:
             try:
-                print('call method called')
-                # Fetch the user's token
-                social_token = SocialToken.objects.get(account__user=request.user, account__provider='google')
-
-                # Refresh the token if it's about to expire within the next 5 minutes
-                if social_token.expires_at and (social_token.expires_at - now()) < timedelta(minutes=5):
-                    creds = retrieve_credentials_for_user(request.user.id)
+                # Retrieve credentials for the current user
+                creds = retrieve_credentials_for_user(request.user.id)
+                
+                # Ensure `creds.expiry` is a datetime object
+                if isinstance(creds.expiry, str):
+                    creds.expiry = datetime.strptime(creds.expiry, '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=timezone.utc)
+                
+                # Refresh the token if it will expire within 30 minutes
+                if creds.expiry and creds.expiry - now() < timedelta(minutes=30):
                     creds.refresh(Request())
-                    print('token refreshed')
 
-            except SocialToken.DoesNotExist:
-                pass  # No token for the user, skip
+                    # Update the token in the database
+                    social_account = SocialAccount.objects.get(user=request.user, provider='google')
+                    social_token = SocialToken.objects.get(account=social_account)
+                    social_token.token = creds.token
+                    social_token.expires_at = creds.expiry
+                    social_token.save()
 
-        return self.get_response(request)
+            except Exception as e:
+                # Log or handle token refresh errors
+                print(f"Error refreshing token: {e}")
 
+        response = self.get_response(request)
+        return response
