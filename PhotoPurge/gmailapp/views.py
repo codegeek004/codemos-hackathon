@@ -14,10 +14,11 @@ from django.core.mail import EmailMessage
 from .auth import check_token_validity
 from django.contrib.auth import logout
 from googleapiclient.errors import HttpError 
-
+from .auth import check_token_validity
 
 
 def index_view(request):
+
     return render(request, 'index.html')
 
 # works when when delete emails button is triggered 
@@ -52,8 +53,10 @@ def delete_emails_view(request):
                 return HttpResponse("Invalid category selected.", status=400)
             
             # task defined in tasks module
-            task = delete_emails_task.delay(request.user.id, request.user.email, category)
-
+            try:
+                task = delete_emails_task.delay(request.user.id, request.user.email, category)
+            except Exception as e:
+                messages.error(request, f"Error {e}")
             # Create TaskStatus object to track task progress
             TaskStatus.objects.create(
                 task_id=task.id,
@@ -77,7 +80,8 @@ def delete_emails_view(request):
 # works when recover emails button is triggered
 def recover_emails_from_trash_view(request):
     if not request.user.is_authenticated:
-        return HttpResponse("You are not logged in. Please login to continue.", status=403)
+        messages.error(request, "You are not logged in. Please login to continue.")
+        return redirect('index')
 
     try:
         # this task is also defined in tasks module
