@@ -17,8 +17,8 @@ def retrieve_credentials_for_user(user_id):
             token=social_token.token,
             refresh_token=social_token.token_secret,
             token_uri="https://oauth2.googleapis.com/token",
-            client_id="your-client-id.apps.googleusercontent.com",
-            client_secret="your-client-secret",
+            client_id="99034799467-hl9dbl4t4l64gftesd8bokb1no6kbgu3.apps.googleusercontent.com",
+            client_secret="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",
             expiry=actual_time
         )
 
