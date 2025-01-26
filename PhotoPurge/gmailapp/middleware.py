@@ -19,7 +19,7 @@ class TokenRefreshMiddleware:
                 
                 # Ensure `creds.expiry` is a datetime object
                 if isinstance(creds.expiry, str):
-                    creds.expiry = datetime.strptime(creds.expiry, '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=timezone.utc)
+                    creds.expiry = datetime.strptime(creds.expiry.replace(' ', 'T'), '%Y-%m-%dT%H:%M:%S.%f')
                 
                 # Refresh the token if it will expire within 30 minutes
                 if creds.expiry and creds.expiry - now() < timedelta(minutes=30):
