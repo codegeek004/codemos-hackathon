@@ -1,7 +1,5 @@
-from datetime import datetime, timedelta, timezone
-from google.auth.transport.requests import Request
-from allauth.socialaccount.models import SocialAccount, SocialToken
-from django.utils.timezone import now
+from django.utils.timezone import now, make_aware
+from datetime import datetime, timezone, timedelta
 from .utils import retrieve_credentials_for_user
 
 class TokenRefreshMiddleware:
@@ -16,20 +14,24 @@ class TokenRefreshMiddleware:
             try:
                 # Retrieve credentials for the current user
                 creds = retrieve_credentials_for_user(request.user.id)
-                
-                # Ensure `creds.expiry` is a datetime object
+
+                # Convert creds.expiry from string to datetime if necessary
                 if isinstance(creds.expiry, str):
-                    creds.expiry = datetime.strptime(creds.expiry.replace(' ', 'T'), '%Y-%m-%dT%H:%M:%S.%f')
-                
+                    creds.expiry = datetime.fromisoformat(creds.expiry)
+
+                # Convert creds.expiry to timezone-aware if it's naive
+                if creds.expiry.tzinfo is None:
+                    creds.expiry = make_aware(creds.expiry, timezone.utc)
+
                 # Refresh the token if it will expire within 30 minutes
-                if creds.expiry and creds.expiry - now() < timedelta(minutes=30):
+                if creds.expiry - now() < timedelta(minutes=30):
                     creds.refresh(Request())
 
                     # Update the token in the database
                     social_account = SocialAccount.objects.get(user=request.user, provider='google')
                     social_token = SocialToken.objects.get(account=social_account)
                     social_token.token = creds.token
-                    social_token.expires_at = creds.expiry
+                    social_token.expires_at = creds.expiry  # Already timezone-aware
                     social_token.save()
 
             except Exception as e:
