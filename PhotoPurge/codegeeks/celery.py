@@ -2,9 +2,9 @@ from __future__ import absolute_import, unicode_literals
 import os
 from celery import Celery
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'myproject.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'codegeeks.settings')
 
-app = Celery('myproject')
+app = Celery('codegeeks')
 
 # Using a string here means the worker doesn't have to serialize
 # the configuration object to child processes.

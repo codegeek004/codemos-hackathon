@@ -67,7 +67,7 @@ MIDDLEWARE = [
     'gmailapp.middleware.TokenRefreshMiddleware',
 ]
 
-ROOT_URLCONF = 'myproject.urls'
+ROOT_URLCONF = 'codegeeks.urls'
 
 TEMPLATES = [
     {
@@ -85,7 +85,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'myproject.wsgi.application'
+WSGI_APPLICATION = 'codegeeks.wsgi.application'
 
 
 # Database
@@ -117,8 +117,8 @@ SOCIALACCOUNT_PROVIDERS = {
              'client_id': '99034799467-hl9dbl4t4l64gftesd8bokb1no6kbgu3.apps.googleusercontent.com',
              'secret': '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',
             # for local development
-            #'client_id': '99034799467-6l1lm0l6b80h2bcmon2i8st2odg778nj.apps.googleusercontent.com',
-            #'secret': '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',
+            # 'client_id': '99034799467-6l1lm0l6b80h2bcmon2i8st2odg778nj.apps.googleusercontent.com',
+            # 'secret': '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',
             'key': ''
         }
     }   
