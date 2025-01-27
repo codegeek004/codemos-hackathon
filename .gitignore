@@ -4,4 +4,4 @@ venv/
 virtual/
 yashvaishnav/
 .*
-
+.DS_Store
