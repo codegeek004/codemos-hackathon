@@ -35,7 +35,7 @@
 <!-- Main Container with Custom CSS -->
 <div class="container">
     {% if messages %}
-        <ul class="messages" style="color: #f44336; list-style-type: none; padding: 0;">
+        <ul class="messages" style="color: blue; list-style-type: none; padding: 0;">
             {% for message in messages %}
                 <li{% if message.tags %} class="{{ message.tags }}"{% endif %} style="font-size: 14px; margin-bottom: 10px; padding: 10px; background-color: #ffe5e5; border-radius: 5px;">
                     {{ message }}
@@ -74,7 +74,7 @@
     </select>
     
     <br>
-    <button style="display: block; width: 60%; margin: 20px auto; background-color: #4CAF50; color: white; padding: 10px 20px; border-radius: 5px; font-size: 16px; border: none; cursor: pointer; transition: background-color 0.3s;">
+    <button style="display: block; width: 60%; margin: 20px auto; background-color: rgb(3, 40, 80); color: white; padding: 10px 20px; border-radius: 5px; font-size: 16px; border: none; cursor: pointer; transition: background-color 0.3s;">
         Delete Emails
     </button>
 </form>
