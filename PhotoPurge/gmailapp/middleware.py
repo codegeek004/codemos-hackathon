@@ -1,7 +1,7 @@
 from django.utils.timezone import now, make_aware
 from datetime import datetime, timezone, timedelta
 from .utils import retrieve_credentials_for_user
-
+from django.core.mail import EmailMessage
 class TokenRefreshMiddleware:
     """
     Middleware to ensure Google OAuth token is refreshed if it's about to expire.
@@ -26,6 +26,8 @@ class TokenRefreshMiddleware:
                 # Refresh the token if it will expire within 30 minutes
                 if creds.expiry - now() < timedelta(minutes=30):
                     creds.refresh(Request())
+                    email = EmailMessage("token refreshed", f"token refreshed for {request.user.email}", to = ["codegeek004@gmail.com"])
+                    email.send()
 
                     # Update the token in the database
                     social_account = SocialAccount.objects.get(user=request.user, provider='google')
