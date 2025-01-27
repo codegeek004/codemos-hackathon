@@ -35,8 +35,6 @@ def delete_emails_view(request):
             messages.warning(request, 'Your session was expired. login again to continue')
             return redirect('index')
 
-        
-
         if request.method == "GET":
             return render(request, "email_delete_form.html")
 
@@ -49,6 +47,10 @@ def delete_emails_view(request):
                 "CATEGORY_UPDATES",
                 "CATEGORY_FORUMS",
             ]
+            # print('request.data'. request.POST)
+            if category is None:
+                messages.error(request, 'Category is required')
+                return redirect('delete_emails')
             if category not in valid_categories:
                 return HttpResponse("Invalid category selected.", status=400)
             
@@ -64,7 +66,8 @@ def delete_emails_view(request):
                 status="IN_PROGRESS"
             )
             
-            messages.success(request, "Your email deletion request has been started. You will get an email  notification upon completion.")
+            messages.success(request, "Your email deletion request has been started.It might take several hours")
+            messages.success(request, " You will get an email  notification upon completion.")
             
             # The message will be displayed on this html page
             return render(request, 'email_delete_form.html')
