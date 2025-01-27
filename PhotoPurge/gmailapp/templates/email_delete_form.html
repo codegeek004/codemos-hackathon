@@ -63,21 +63,22 @@
         </div>
     {% else %}
         <form method="POST" action="{% url 'delete_emails' %}" style="margin-top: 40px;">
-            {% csrf_token %}
-            <h5 style="text-align:center; font-size: 20px; color: #333;">Choose Category</h5>
-            
-            <select style="width: 60%; padding: 10px; margin: 20px auto; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; display: block;">
-                <option value="CATEGORY_PROMOTIONS">Promotions</option>
-                <option value="CATEGORY_SOCIAL">Social</option>
-                <option value="CATEGORY_UPDATES">Updates</option>
-                <option value="CATEGORY_FORUMS">Forums</option>
-            </select>
-            
-            <br>
-            <button style="display: block; width: 60%; margin: 20px auto; background-color: #4CAF50; color: white; padding: 10px 20px; border-radius: 5px; font-size: 16px; border: none; cursor: pointer; transition: background-color 0.3s;">
-                Delete Emails
-            </button>
-        </form>
+    {% csrf_token %}
+    <h5 style="text-align:center; font-size: 20px; color: #333;">Choose Category</h5>
+    
+    <select name="category" style="width: 60%; padding: 10px; margin: 20px auto; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; display: block;">
+        <option value="CATEGORY_PROMOTIONS">Promotions</option>
+        <option value="CATEGORY_SOCIAL">Social</option>
+        <option value="CATEGORY_UPDATES">Updates</option>
+        <option value="CATEGORY_FORUMS">Forums</option>
+    </select>
+    
+    <br>
+    <button style="display: block; width: 60%; margin: 20px auto; background-color: #4CAF50; color: white; padding: 10px 20px; border-radius: 5px; font-size: 16px; border: none; cursor: pointer; transition: background-color 0.3s;">
+        Delete Emails
+    </button>
+</form>
+
     {% endif %}
 </div>
 
