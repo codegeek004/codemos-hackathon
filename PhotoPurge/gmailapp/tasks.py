@@ -9,6 +9,7 @@ from .auth import check_token_validity, refresh_google_token
 import time
 from datetime import datetime, timezone
 from google.auth.transport.requests import Request
+from allauth.socialaccount.models import SocialAccount
 #with bind=True we can use self in the function
 @shared_task(bind=True)
 def delete_emails_task(self, user_id, email, category):
