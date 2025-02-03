@@ -21,6 +21,9 @@ def index_view(request):
 
     return render(request, 'index.html')
 
+def privacy_policy_view(request):
+    return render(request, 'privacy_policy.html')
+
 # works when when delete emails button is triggered 
 def delete_emails_view(request):
     try:
