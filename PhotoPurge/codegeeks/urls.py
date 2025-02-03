@@ -23,5 +23,6 @@ urlpatterns = [
     path('gmail/', include('gmailapp.urls')),
     path( 'photos/', include('photos.urls')),
     path('accounts/', include('allauth.urls')),
-    path('', views.index_view, name='index')
+    path('', views.index_view, name='index'),
+    path('privacy_policy/', views.privacy_policy_view, name='privacy_policy')
 ]
