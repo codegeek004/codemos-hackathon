@@ -114,11 +114,11 @@ SOCIALACCOUNT_PROVIDERS = {
         },
         'OAUTH_PKCE_ENABLED': True,
         'APP': {
-             'client_id': '99034799467-hl9dbl4t4l64gftesd8bokb1no6kbgu3.apps.googleusercontent.com',
-             'secret': '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',
+              'client_id': '99034799467-hl9dbl4t4l64gftesd8bokb1no6kbgu3.apps.googleusercontent.com',
+              'secret': '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',
             # for local development
-            # 'client_id': '99034799467-6l1lm0l6b80h2bcmon2i8st2odg778nj.apps.googleusercontent.com',
-            # 'secret': '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',
+            #'client_id': '99034799467-6l1lm0l6b80h2bcmon2i8st2odg778nj.apps.googleusercontent.com',
+            #'secret': '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',
             'key': ''
         }
     }   
@@ -206,7 +206,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_HOST_USER = 'codegeek004@gmail.com'
-EMAIL_HOST_PASSWORD = 'yfbq lrsg xfao hvmd'
+EMAIL_HOST_PASSWORD = 'dfhv rpmy mkgh wdcs'
+
 EMAIL_PORT = 587
 
 
