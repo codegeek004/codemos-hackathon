@@ -47,7 +47,9 @@ const FetchPhotosScreen = ({ route }) => {
 // Helper function to parse response and extract photo URL
 const extractPhotoUrl = (responseData) => {
     try {
-        let match = responseData.match(/"https:\\/\\/lh3.googleusercontent.com\\/(.*?)"/);
+        //let match = responseData.match(/"https:\\/\\/lh3.googleusercontent.com\\/(.*?)"/);
+        let match = responseData.match(/"https:\/\/lh3\.googleusercontent\.com\/(.*?)"/);
+
         if (match) {
             return `https://lh3.googleusercontent.com/${match[1]}`;
         }
