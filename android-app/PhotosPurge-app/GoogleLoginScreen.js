@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { View, Button, Text } from 'react-native';
 import { WebView } from 'react-native-webview';
-import CookieManager from '@react-native-cookies/cookies';
+import CookieManager from 'react-native-cookie-store';
 
 const GoogleLoginScreen = ({ navigation }) => {
     const webViewRef = useRef(null);
