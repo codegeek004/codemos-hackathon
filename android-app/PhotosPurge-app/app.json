@@ -1,4 +1,11 @@
 {
-  "name": "PhotosPurge",
-  "displayName": "PhotosPurge"
+  "name": "PhotosPurgeApp",
+  "displayName": "PhotosPurgeApp",
+  "expo": {
+    "name": "PhotosPurgeApp",
+    "slug": "PhotosPurgeApp",
+    "version": "1.0.0",
+    "sdkVersion": "52.0.0",
+    "newArchEnabled": true
+  }
 }
