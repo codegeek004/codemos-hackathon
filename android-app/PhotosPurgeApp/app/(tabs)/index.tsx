@@ -1,174 +1,210 @@
 import React, { useRef, useState } from 'react';
-import { View, Button, Text, StyleSheet, ActivityIndicator, ScrollView, Alert } from 'react-native';
+import { View, Text, Button, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { WebView } from 'react-native-webview';
-import CryptoJS from 'crypto-js';
+import * as CryptoJS from 'crypto-js';
 
-const GOOGLE_PHOTOS_URL = 'https://photos.google.com/';
+const GOOGLE_PHOTOS_URL = 'https://photos.google.com';
 
 export default function App() {
   const webViewRef = useRef(null);
-  const [step, setStep] = useState<'source' | 'destination' | 'done'>('source');
-  const [showWebView, setShowWebView] = useState(true);
-  const [sourceCookies, setSourceCookies] = useState('');
-  const [destinationCookies, setDestinationCookies] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState('');
 
-  const injectJS = `
+  const [currentStep, setCurrentStep] = useState('Idle');
+  const [logs, setLogs] = useState<string[]>([]);
+  const [sourceCookies, setSourceCookies] = useState<string | null>(null);
+  const [destCookies, setDestCookies] = useState<string | null>(null);
+  const [sourceEmail, setSourceEmail] = useState('');
+  const [destEmail, setDestEmail] = useState('');
+  const [webVisible, setWebVisible] = useState(true);
+  const [mode, setMode] = useState<'source' | 'dest' | null>(null);
+
+  const log = (msg: string) => {
+    console.log(msg);
+    setLogs(prev => [...prev, msg]);
+  };
+
+  const extractSAPISIDHASH = (cookie: string) => {
+    const sapisid = /SAPISID=(.*?);/.exec(cookie)?.[1];
+    const origin = 'https://photos.google.com';
+    const timestamp = Math.floor(Date.now() / 1000);
+    const input = `${timestamp} ${sapisid} ${origin}`;
+    const hash = CryptoJS.SHA1(input).toString();
+    return `${timestamp}_${hash}`;
+  };
+
+  const injectScript = `
     setTimeout(() => {
       window.ReactNativeWebView.postMessage(document.cookie);
     }, 3000);
     true;
   `;
 
-  const handleMessage = (event: any) => {
-    const cookie = event.nativeEvent.data;
-
-    if (step === 'source') {
-      setSourceCookies(cookie);
-      setStatus('✅ Source cookies extracted');
-      setStep('destination');
-      setShowWebView(true); // open destination login
-    } else if (step === 'destination') {
-      setDestinationCookies(cookie);
-      setStatus('✅ Destination cookies extracted');
-      setStep('done');
-      setShowWebView(false);
-    }
+  const extractEmail = async (cookie: string) => {
+    const headers = {
+      'Authorization': `SAPISIDHASH ${extractSAPISIDHASH(cookie)}`,
+      'X-Origin': 'https://photos.google.com',
+      'X-Goog-AuthUser': '0'
+    };
+    const resp = await fetch('https://photos.google.com/_/PeopleDataService/GetPeopleData', {
+      method: 'POST',
+      headers
+    });
+    const text = await resp.text();
+    const match = text.match(/"([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+)"/);
+    return match?.[1] || 'Unknown';
   };
 
-  const extractSAPISIDHASH = (cookie: string) => {
-    const sapisidMatch = cookie.match(/SAPISID=([^;]+)/);
-    if (!sapisidMatch) return '';
-    const sapisid = sapisidMatch[1];
-    const origin = 'https://photos.google.com';
-    const time = Math.floor(new Date().getTime() / 1000);
-    const input = `${time} ${sapisid} ${origin}`;
-    const hash = CryptoJS.SHA1(input).toString();
-    return `SAPISIDHASH ${time}_${hash}`;
+  const onMessage = async (event: any) => {
+    const cookie = event.nativeEvent.data;
+    if (mode === 'source') {
+      setSourceCookies(cookie);
+      const email = await extractEmail(cookie);
+      setSourceEmail(email);
+      log(`✅ Source account: ${email}`);
+    } else if (mode === 'dest') {
+      setDestCookies(cookie);
+      const email = await extractEmail(cookie);
+      setDestEmail(email);
+      log(`✅ Destination account: ${email}`);
+    }
+    setWebVisible(false);
+    setCurrentStep('Idle');
+  };
+
+  const fetchPhotos = async (cookie: string) => {
+    log('📸 Fetching photo tokens from source account...');
+    const sapisidhash = extractSAPISIDHASH(cookie);
+    const headers = {
+      'Authorization': `SAPISIDHASH ${sapisidhash}`,
+      'X-Origin': 'https://photos.google.com',
+      'X-Goog-AuthUser': '0',
+      'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+    };
+
+    const allTokens: string[] = [];
+    let nextPageToken = null;
+
+    for (let i = 0; i < 100; i++) {
+      const body = `f.req=${encodeURIComponent(JSON.stringify([
+        ["af.afp", JSON.stringify({
+          albumId: null,
+          pageSize: 100,
+          pageToken: nextPageToken
+        })]
+      ]))}&`;
+
+      const response = await fetch('https://photos.google.com/_/PhotosUi/data/batchexecute', {
+        method: 'POST',
+        headers,
+        body,
+      });
+
+      const text = await response.text();
+      const jsonData = JSON.parse(text.split('\n')[3])[2];
+      const innerData = JSON.parse(jsonData);
+
+      const items = innerData[1] || [];
+      const tokens = items.map((item: any) => item[0]);
+      allTokens.push(...tokens);
+
+      nextPageToken = innerData[3];
+      if (!nextPageToken) break;
+    }
+
+    log(`✅ Total photos fetched: ${allTokens.length}`);
+    return allTokens;
   };
 
   const migratePhotos = async () => {
-    setLoading(true);
-    setStatus('⏳ Migrating photos...');
-
-    try {
-      const authHeaderSource = extractSAPISIDHASH(sourceCookies);
-      const authHeaderDest = extractSAPISIDHASH(destinationCookies);
-
-      const headersSource = {
-        'Authorization': authHeaderSource,
-        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
-        'X-Same-Domain': '1',
-        'X-Goog-AuthUser': '0',
-        'Cookie': sourceCookies,
-      };
-
-      const headersDest = {
-        'Authorization': authHeaderDest,
-        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
-        'X-Same-Domain': '1',
-        'X-Goog-AuthUser': '0',
-        'Cookie': destinationCookies,
-      };
-
-      const batchUrl = 'https://photos.google.com/_/PhotosUi/data/batchexecute';
-
-      // 1. Get list of photo tokens from source
-      //const photoListBody = `f.req=${encodeURIComponent(JSON.stringify([["af.afp", JSON.stringify({albumId: null, pageSize: 50})]]) + '&'])}`;
-      const photoListBody = `f.req=${encodeURIComponent(JSON.stringify([["af.afp", JSON.stringify({albumId: null, pageSize: 50})]]))}&`;
-
-      const photoListResp = await fetch(batchUrl, {
-        method: 'POST',
-        headers: headersSource,
-        body: photoListBody,
-      });
-      const photoListText = await photoListResp.text();
-      const photoTokens = extractPhotoTokensFromResponse(photoListText); // You’ll define this below
-
-      if (!photoTokens.length) throw new Error('No photo tokens found');
-
-      // 2. Upload to destination
-      //const addPhotosBody = `f.req=${encodeURIComponent(JSON.stringify([["af.apf", JSON.stringify({photoTokens, albumId: null})]]) + '&'])}`;
-      const addPhotosBody = `f.req=${encodeURIComponent(JSON.stringify([["af.apf", JSON.stringify({photoTokens, albumId: null})]]))}&`;
-
-      await fetch(batchUrl, {
-        method: 'POST',
-        headers: headersDest,
-        body: addPhotosBody,
-      });
-
-      setStatus(`✅ Migrated ${photoTokens.length} photos successfully`);
-    } catch (err: any) {
-      setStatus('❌ Migration failed: ' + err.message);
-      Alert.alert('Error', err.message);
-    } finally {
-      setLoading(false);
+    if (!sourceCookies || !destCookies) {
+      log('❌ Please extract cookies for both accounts.');
+      return;
     }
-  };
 
-  const extractPhotoTokensFromResponse = (response: string) => {
-    try {
-      const match = response.match(/\[\["af\.afp",(.*?)\]\]/);
-      if (!match) return [];
-      const json = JSON.parse(match[1]);
-      const items = json[1][1];
-      return items.map((item: any) => item[0]); // each [token, ...]
-    } catch {
-      return [];
+    setCurrentStep('Migrating...');
+    const photoTokens = await fetchPhotos(sourceCookies);
+
+    if (photoTokens.length === 0) {
+      log('❌ No photos found to migrate.');
+      return;
     }
+
+    log('🔁 Starting photo migration...');
+    const sapisidhash = extractSAPISIDHASH(destCookies);
+    const headers = {
+      'Authorization': `SAPISIDHASH ${sapisidhash}`,
+      'X-Origin': 'https://photos.google.com',
+      'X-Goog-AuthUser': '0',
+      'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+    };
+
+    const body = `f.req=${encodeURIComponent(JSON.stringify([
+      ["af.apf", JSON.stringify({
+        albumId: null,
+        photoTokens,
+      })]
+    ]))}&`;
+
+    const response = await fetch('https://photos.google.com/_/PhotosUi/data/batchexecute', {
+      method: 'POST',
+      headers,
+      body,
+    });
+
+    const success = response.ok;
+    if (success) {
+      log('✅ Photos migrated successfully!');
+    } else {
+      log('❌ Migration failed.');
+    }
+
+    setCurrentStep('Done');
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>📷 Google Photos Migrator</Text>
+    <View style={styles.container}>
+      <Text style={styles.heading}>📷 Google Photos Migrator</Text>
 
-      {status && <Text style={styles.status}>{status}</Text>}
+      <Button title="Login as Source Account" onPress={() => {
+        setMode('source');
+        setWebVisible(true);
+        setCurrentStep('Logging in source...');
+      }} />
 
-      {showWebView && (
-        <View style={{ height: 500, width: '100%', marginBottom: 10 }}>
-          <WebView
-            ref={webViewRef}
-            source={{ uri: GOOGLE_PHOTOS_URL }}
-            javaScriptEnabled={true}
-            injectedJavaScript={injectJS}
-            onMessage={handleMessage}
-            incognito={true}
-          />
-        </View>
+      <Button title="Login as Destination Account" onPress={() => {
+        setMode('dest');
+        setWebVisible(true);
+        setCurrentStep('Logging in destination...');
+      }} />
+
+      <Button title="🚀 Migrate All Photos" onPress={migratePhotos} />
+
+      <ScrollView style={styles.logs}>
+        {logs.map((logMsg, i) => (
+          <Text key={i} style={styles.log}>{logMsg}</Text>
+        ))}
+      </ScrollView>
+
+      {webVisible && (
+        <WebView
+          ref={webViewRef}
+          source={{ uri: GOOGLE_PHOTOS_URL }}
+          injectedJavaScript={injectScript}
+          onMessage={onMessage}
+          javaScriptEnabled
+          domStorageEnabled
+        />
       )}
 
-      {!showWebView && step === 'destination' && (
-        <Button title="Login to Destination Account" onPress={() => setShowWebView(true)} />
+      {currentStep !== 'Idle' && (
+        <ActivityIndicator size="large" color="blue" />
       )}
-
-      {step === 'done' && !loading && (
-        <Button title="🚀 Migrate All Photos" onPress={migratePhotos} />
-      )}
-
-      {loading && <ActivityIndicator size="large" color="#007AFF" />}
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    paddingTop: 60,
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    flexGrow: 1,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  status: {
-    marginVertical: 10,
-    fontSize: 16,
-    color: '#333',
-    textAlign: 'center',
-  },
+  container: { flex: 1, paddingTop: 50, paddingHorizontal: 10 },
+  heading: { fontSize: 20, fontWeight: 'bold', marginBottom: 10 },
+  logs: { marginTop: 20 },
+  log: { fontSize: 14, marginBottom: 5 }
 });
-
