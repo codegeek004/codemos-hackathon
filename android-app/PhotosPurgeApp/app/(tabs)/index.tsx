@@ -1,347 +1,163 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { View, Text, Button, TextInput, ScrollView, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import React, { useRef, useState } from 'react';
+// import { View, Text, Button, TextInput, ScrollView, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, Button, TextInput, ScrollView, StyleSheet, ActivityIndicator, Alert, FlatList } from 'react-native';
+
 import { WebView } from 'react-native-webview';
 import sha1 from 'js-sha1';
 
+type LogType = 'info' | 'success' | 'error' | 'debug' | 'warning';
 type MigrationLog = {
-  type: 'info' | 'success' | 'error' | 'debug' | 'warning';
+  type: LogType;
   message: string;
   timestamp: Date;
   details?: any;
 };
 
-type PhotoItem = {
-  token: string;
-  url: string;
-  status: 'pending' | 'success' | 'failed';
-  error?: string;
-};
-
 const App = () => {
+  // Refs and State
   const webviewRef = useRef<WebView>(null);
-  const [showWebView, setShowWebView] = useState(false);
   const [cookies, setCookies] = useState('');
+  const [xsrfToken, setXsrfToken] = useState('');
   const [destinationEmail, setDestinationEmail] = useState('');
   const [logs, setLogs] = useState<MigrationLog[]>([]);
   const [isMigrating, setIsMigrating] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [photos, setPhotos] = useState<PhotoItem[]>([]);
-  const [sourceAccount, setSourceAccount] = useState('');
-  const [xsrfToken, setXsrfToken] = useState('');
+  const [fetchedPhotos, setFetchedPhotos] = useState<any[]>([]);
 
-  // Enhanced logging system
-  const addLog = (type: MigrationLog['type'], message: string, details?: any) => {
-    const newLog: MigrationLog = {
+  // Enhanced logging with color coding
+  const addLog = (type: LogType, message: string, details?: any) => {
+    const newLog = {
       type,
       message,
       timestamp: new Date(),
       details
     };
     console.log(`[${type.toUpperCase()}] ${message}`, details || '');
-    setLogs(prev => [newLog, ...prev].slice(0, 200));
+    setLogs(prev => [newLog, ...prev].slice(0, 100)); // Keep last 100 logs
   };
 
-  // SAPISIDHASH generator with error handling
-  const getSAPISIDHASH = (cookie: string): string => {
+  // Extract the REAL CSRF token (__Secure-1PSIDTS)
+  const extractSecurityTokens = (cookieHeader: string) => {
     try {
-      const sapisid = cookie.match(/SAPISID=(.*?)(;|$)/)?.[1];
-      const sid = cookie.match(/SID=(.*?)(;|$)/)?.[1];
+      const psidts = cookieHeader.match(/__Secure-1PSIDTS=([^;]+)/)?.[1];
+      const sapisid = cookieHeader.match(/SAPISID=([^;]+)/)?.[1];
       
-      if (!sapisid || !sid) {
-        addLog('error', 'SAPISID or SID not found in cookies');
-        return '';
-      }
+      addLog('debug', 'Extracted security tokens', {
+        hasPSIDTS: !!psidts,
+        hasSAPISID: !!sapisid
+      });
 
-      const timestamp = Math.floor(Date.now() / 1000);
-      const input = `${timestamp} ${sapisid} https://photos.google.com`;
-      const hash = sha1(input);
-      return `SAPISIDHASH ${timestamp}_${hash}`;
+      return { psidts, sapisid };
     } catch (error) {
-      addLog('error', 'Error generating SAPISIDHASH', error);
+      addLog('error', 'Failed to extract security tokens', error);
+      return { psidts: '', sapisid: '' };
+    }
+  };
+
+  // Generate SAPISIDHASH for authentication
+  const generateSapisidHash = (sapisid: string) => {
+    if (!sapisid) {
+      addLog('error', 'Cannot generate SAPISIDHASH - missing SAPISID');
       return '';
     }
+    const timestamp = Math.floor(Date.now() / 1000);
+    const hash = sha1(`${timestamp} ${sapisid} https://photos.google.com`);
+    return `SAPISIDHASH ${timestamp}_${hash}`;
   };
 
-  // Extract XSRF token from cookies
-  const extractXsrfToken = (cookie: string): string => {
-    const xsrfMatch = cookie.match(/XSRF-TOKEN=(.*?)(;|$)/);
-    if (xsrfMatch) {
-      const token = decodeURIComponent(xsrfMatch[1]);
-      addLog('debug', 'Extracted XSRF token from cookies');
-      return token;
-    }
-    return '';
-  };
-
-  // Handle WebView navigation and messages
-  const handleNavigationStateChange = (navState: any) => {
-    if (navState.url.includes('photos.google.com')) {
-      webviewRef.current?.injectJavaScript(`
-        // Try to get XSRF token from meta tag as fallback
-        const xsrfMeta = document.querySelector('meta[name="xsrf-token"]');
-        const xsrfToken = xsrfMeta ? xsrfMeta.content : '';
-        
-        window.ReactNativeWebView.postMessage(JSON.stringify({
-          type: 'cookies',
-          cookies: document.cookie,
-          xsrfToken: xsrfToken,
-          url: window.location.href
-        }));
-        true;
-      `);
-    }
-  };
-
+  // Handle WebView messages
   const handleWebViewMessage = (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
-      
+      addLog('debug', 'WebView message received', { type: data.type });
+
       if (data.type === 'cookies') {
-        if (data.cookies && data.cookies.includes('SAPISID')) {
-          setCookies(data.cookies);
-          
-          // Try to get XSRF token from multiple sources
-          const tokenFromCookies = extractXsrfToken(data.cookies);
-          const tokenFromMeta = data.xsrfToken;
-          const xsrf = tokenFromCookies || tokenFromMeta;
-          
-          if (xsrf) {
-            setXsrfToken(xsrf);
-            addLog('success', 'XSRF token obtained', {
-              source: tokenFromCookies ? 'cookies' : 'meta'
-            });
-          }
-
-          addLog('success', 'Cookies extracted successfully');
-          extractAccountInfo(data.cookies);
-          setShowWebView(false);
-        }
-      }
-      
-      if (data.type === 'accountInfo') {
-        if (data.email) {
-          setSourceAccount(data.email);
-          addLog('success', `Source account identified: ${data.email}`);
+        setCookies(data.cookies);
+        const { psidts } = extractSecurityTokens(data.cookies);
+        
+        if (psidts) {
+          setXsrfToken(psidts);
+          addLog('success', 'XSRF token (__Secure-1PSIDTS) set successfully');
+        } else {
+          addLog('error', 'Failed to extract XSRF token from cookies');
         }
       }
     } catch (error) {
-      addLog('error', 'Error processing WebView message', error);
+      addLog('error', 'WebView message processing failed', error);
     }
   };
 
-  // Extract account info from cookies or DOM
-  const extractAccountInfo = (cookie: string) => {
-    try {
-      const emailMatch = cookie.match(/(Email|GMAIL_AT)=(.*?)(;|$)/)?.[2];
-      if (emailMatch) {
-        setSourceAccount(decodeURIComponent(emailMatch));
-        return;
-      }
-
-      // Fallback to DOM extraction
-      webviewRef.current?.injectJavaScript(`
-        try {
-          const email = document.querySelector('[data-email]')?.getAttribute('data-email') || 
-                       document.querySelector('[aria-label*="@"]')?.ariaLabel;
-          window.ReactNativeWebView.postMessage(JSON.stringify({
-            type: 'accountInfo',
-            email: email || 'unknown'
-          }));
-        } catch(e) {
-          window.ReactNativeWebView.postMessage(JSON.stringify({
-            type: 'accountInfo',
-            error: e.message
-          }));
-        }
-        true;
-      `);
-    } catch (error) {
-      addLog('error', 'Error extracting account info', error);
+  // Make authenticated API request
+  const makeApiRequest = async (endpoint: string, rpcids: string, payload: any) => {
+    const { psidts, sapisid } = extractSecurityTokens(cookies);
+    
+    if (!psidts) {
+      throw new Error('XSRF token (__Secure-1PSIDTS) missing');
     }
+
+    const headers = {
+      'Authorization': generateSapisidHash(sapisid),
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Cookie': cookies,
+      'X-XSRF-TOKEN': psidts,
+      'X-Goog-AuthUser': '0'
+    };
+
+    const fullPayload = {
+      ...payload,
+      rpcids,
+      at: 'token_from_initial_load' // Still required but not CSRF
+    };
+
+    addLog('debug', 'Making API request', {
+      endpoint,
+      headers: { ...headers, Authorization: 'REDACTED' },
+      payload: { ...fullPayload, 'f.req': 'REDACTED' }
+    });
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers,
+      body: new URLSearchParams(fullPayload as any),
+    });
+
+    const responseText = await response.text();
+    addLog('debug', 'API response received', {
+      status: response.status,
+      responseLength: responseText.length
+    });
+
+    return responseText;
   };
 
-  // Parse batchexecute response
-  const parseBatchExecuteResponse = (text: string) => {
-    try {
-      // Handle XSSI prefix
-      const cleanText = text.startsWith(")]}'") ? text.substring(5) : text;
-      return JSON.parse(cleanText);
-    } catch (error) {
-      addLog('error', 'Failed to parse API response', {
-        error,
-        responseSample: text.substring(0, 100)
-      });
-      return null;
-    }
-  };
-
-  // Fetch photos with proper XSRF handling
+  // Fetch photos with proper CSRF protection
   const fetchPhotos = async () => {
-    if (!cookies || !xsrfToken) {
-      addLog('error', 'Missing required tokens', {
-        hasCookies: !!cookies,
-        hasXsrfToken: !!xsrfToken
-      });
-      return;
-    }
-
     setIsLoading(true);
-    addLog('info', 'Starting photo fetch with XSRF protection');
-
+    addLog('info', 'Starting photo fetch');
+    
     try {
-      const authHeader = getSAPISIDHASH(cookies);
-      if (!authHeader) {
-        throw new Error('Failed to generate auth header');
-      }
-
-      const headers = {
-        'Authorization': authHeader,
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Cookie': cookies,
-        'X-XSRF-TOKEN': xsrfToken,
-        'Origin': 'https://photos.google.com'
-      };
-
-      // Payload based on your API analysis
-      const payload = {
-        rpcids: 'snAcKc,wQ6iqd',
-        'f.req': JSON.stringify([
-          [
-            [
-              "snAcKc",
-              `["shared_album_token_placeholder",null,null,null,null,null,2]`,
-              null,
-              "1"
-            ],
-            [
-              "wQ6iqd",
-              `[["shared_album_token_placeholder"]]`,
-              null,
-              "2"
-            ]
-          ]
-        ]),
-        at: xsrfToken
-      };
-
-      const response = await fetch(
-        'https://photos.google.com/_/PhotosUi/data/batchexecute?rpcids=snAcKc%2CwQ6iqd',
+      const response = await makeApiRequest(
+        'https://photos.google.com/_/PhotosUi/data/batchexecute',
+        'snAcKc,wQ6iqd',
         {
-          method: 'POST',
-          headers,
-          body: new URLSearchParams(payload as any),
+          'f.req': JSON.stringify([/* Your payload here */])
         }
       );
 
-      const responseText = await response.text();
-      const parsed = parseBatchExecuteResponse(responseText);
-
-      if (response.status !== 200 || !parsed) {
-        throw new Error(`API request failed with status ${response.status}`);
-      }
-
-      // Extract photos from response - adjust based on actual structure
-      const photoTokens = responseText.match(/https:\/\/photos\.google\.com\/photo\/([a-zA-Z0-9_-]+)/g) || [];
-      const uniquePhotos = Array.from(new Set(photoTokens)).map(url => ({
-        token: url.split('/photo/')[1],
-        url,
-        status: 'pending' as const
-      }));
-
-      setPhotos(uniquePhotos);
-      addLog('success', `Found ${uniquePhotos.length} photos`);
+      // Parse response (simplified example)
+      const photoUrls = response.match(/https:\/\/photos\.google\.com\/photo\/([a-zA-Z0-9_-]+)/g) || [];
+      setFetchedPhotos(photoUrls);
+      addLog('success', `Found ${photoUrls.length} photos`);
 
     } catch (error) {
-      addLog('error', 'Failed to fetch photos', error);
+      addLog('error', 'Photo fetch failed', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Migrate photos with retry logic
-  const migratePhotos = async () => {
-    if (!cookies || !xsrfToken || !destinationEmail) {
-      addLog('error', 'Missing required parameters');
-      return;
-    }
-
-    setIsMigrating(true);
-    addLog('info', 'Starting migration process');
-
-    try {
-      let successCount = 0;
-      for (const photo of photos) {
-        try {
-          const authHeader = getSAPISIDHASH(cookies);
-          if (!authHeader) {
-            throw new Error('Failed to generate auth header');
-          }
-
-          const headers = {
-            'Authorization': authHeader,
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Cookie': cookies,
-            'X-XSRF-TOKEN': xsrfToken,
-            'Origin': 'https://photos.google.com'
-          };
-
-          const payload = {
-            rpcids: 'laUYf',
-            'f.req': JSON.stringify([
-              [
-                [
-                  "laUYf",
-                  `["shared_album_token_placeholder",[2,null,[["${photo.token}"]],null,null,[1],null,null,null,null,null,0]`,
-                  null,
-                  "generic"
-                ]
-              ]
-            ]),
-            at: xsrfToken
-          };
-
-          const response = await fetch(
-            'https://photos.google.com/_/PhotosUi/data/batchexecute?rpcids=laUYf',
-            {
-              method: 'POST',
-              headers,
-              body: new URLSearchParams(payload as any),
-            }
-          );
-
-          const responseText = await response.text();
-          
-          if (response.status === 200) {
-            successCount++;
-            setPhotos(prev => prev.map(p => 
-              p.token === photo.token ? {...p, status: 'success'} : p
-            ));
-          } else {
-            throw new Error(`Migration failed with status ${response.status}`);
-          }
-        } catch (error) {
-          addLog('warning', `Failed to migrate photo ${photo.token.substring(0, 8)}...`, error);
-          setPhotos(prev => prev.map(p => 
-            p.token === photo.token ? {...p, status: 'failed', error: error.message} : p
-          ));
-        }
-      }
-
-      addLog('success', `Migration complete: ${successCount}/${photos.length} photos migrated`);
-      Alert.alert(
-        'Migration Complete', 
-        `Successfully migrated ${successCount} of ${photos.length} photos`
-      );
-
-    } catch (error) {
-      addLog('error', 'Migration process failed', error);
-    } finally {
-      setIsMigrating(false);
-    }
-  };
-
-  // UI Components
-  const renderLogItem = (log: MigrationLog, index: number) => {
+  // Render log items with color coding
+  const renderLogItem = ({ item }: { item: MigrationLog }) => {
     const colors = {
       info: '#1976d2',
       success: '#388e3c',
@@ -351,32 +167,15 @@ const App = () => {
     };
     
     return (
-      <View key={index} style={styles.logItem}>
-        <Text style={[styles.logText, { color: colors[log.type] }]}>
-          [{log.timestamp.toLocaleTimeString()}] {log.message}
+      <View style={styles.logItem}>
+        <Text style={[styles.logText, { color: colors[item.type] }]}>
+          [{item.timestamp.toLocaleTimeString()}] {item.message}
         </Text>
-        {log.details && (
+        {item.details && (
           <Text style={styles.logDetails}>
-            {JSON.stringify(log.details, null, 2)}
+            {JSON.stringify(item.details, null, 2)}
           </Text>
         )}
-      </View>
-    );
-  };
-
-  const renderPhotoItem = (photo: PhotoItem, index: number) => {
-    const colors = {
-      pending: '#757575',
-      success: '#388e3c',
-      failed: '#d32f2f'
-    };
-    
-    return (
-      <View key={index} style={styles.photoItem}>
-        <Text style={{ color: colors[photo.status] }}>
-          {photo.token.substring(0, 8)}... - {photo.status.toUpperCase()}
-        </Text>
-        {photo.error && <Text style={styles.errorText}>{photo.error}</Text>}
       </View>
     );
   };
@@ -385,77 +184,57 @@ const App = () => {
     <View style={styles.container}>
       <Text style={styles.header}>Google Photos Migration</Text>
 
-      {/* Account Info */}
-      <View style={styles.accountInfo}>
-        <Text>Source: {sourceAccount || 'Not logged in'}</Text>
-        <Text>Destination: {destinationEmail || 'Not specified'}</Text>
+      {/* Debug Info */}
+      <View style={styles.debugInfo}>
+        <Text>XSRF Token: {xsrfToken ? '✅ Available' : '❌ Missing'}</Text>
+        <Text>Cookies: {cookies ? '✅ Loaded' : '❌ Missing'}</Text>
       </View>
 
-      {/* Action Buttons */}
-      <View style={styles.buttonContainer}>
-        {!cookies && (
-          <Button
-            title="Login to Source Account"
-            onPress={() => setShowWebView(true)}
-            disabled={isLoading || isMigrating}
+      {/* Main Interface */}
+      {!xsrfToken ? (
+        <Button
+          title="Login to Google Photos"
+          onPress={() => setShowWebView(true)}
+        />
+      ) : (
+        <>
+          <TextInput
+            placeholder="Destination email"
+            value={destinationEmail}
+            onChangeText={setDestinationEmail}
+            style={styles.input}
           />
-        )}
-        
-        {cookies && (
           <Button
-            title={isLoading ? "Fetching Photos..." : "Fetch Photos"}
+            title={isLoading ? "Loading..." : "Fetch Photos"}
             onPress={fetchPhotos}
-            disabled={isLoading || isMigrating}
+            disabled={isLoading}
           />
-        )}
-        
-        {photos.length > 0 && (
-          <Button
-            title={isMigrating ? "Migrating..." : `Migrate ${photos.length} Photos`}
-            onPress={migratePhotos}
-            disabled={isMigrating || !destinationEmail}
-          />
-        )}
-      </View>
-
-      {/* Destination Email Input */}
-      {cookies && (
-        <TextInput
-          placeholder="Enter destination email"
-          value={destinationEmail}
-          onChangeText={setDestinationEmail}
-          style={styles.input}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
+        </>
       )}
 
-      {/* WebView for authentication */}
-      {showWebView && (
-        <WebView
-          ref={webviewRef}
-          source={{ uri: 'https://accounts.google.com/AccountChooser?continue=https://photos.google.com' }}
-          onNavigationStateChange={handleNavigationStateChange}
-          onMessage={handleWebViewMessage}
-          sharedCookiesEnabled
-          thirdPartyCookiesEnabled
-          startInLoadingState
-          style={styles.webview}
-        />
-      )}
+      {/* Hidden WebView for auth */}
+      <WebView
+        ref={webviewRef}
+        source={{ uri: 'https://photos.google.com' }}
+        onMessage={handleWebViewMessage}
+        injectedJavaScript={`
+          window.ReactNativeWebView.postMessage({
+            type: 'cookies',
+            cookies: document.cookie
+          });
+          true;
+        `}
+        style={{ height: 1, opacity: 0.01 }}
+      />
 
-      {/* Photos List */}
-      {photos.length > 0 && (
-        <ScrollView style={styles.photosList}>
-          <Text style={styles.sectionHeader}>Photos to Migrate</Text>
-          {photos.map(renderPhotoItem)}
-        </ScrollView>
-      )}
-
-      {/* Activity Log */}
+      {/* Debug Console */}
       <ScrollView style={styles.logContainer}>
-        <Text style={styles.sectionHeader}>Activity Log</Text>
-        {logs.map(renderLogItem)}
+        <Text style={styles.sectionHeader}>Debug Console</Text>
+        <FlatList
+          data={logs}
+          renderItem={renderLogItem}
+          keyExtractor={(item, index) => index.toString()}
+        />
       </ScrollView>
 
       {/* Loading Indicator */}
@@ -463,7 +242,7 @@ const App = () => {
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" />
           <Text style={styles.loadingText}>
-            {isMigrating ? 'Migrating photos...' : 'Loading...'}
+            {isMigrating ? 'Migrating...' : 'Loading...'}
           </Text>
         </View>
       )}
@@ -471,66 +250,34 @@ const App = () => {
   );
 };
 
+// Styles
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: '#f5f5f5'
-  },
-  header: {
-    fontSize: 22,
-    fontWeight: 'bold',
+  container: { flex: 1, padding: 16, backgroundColor: '#f5f5f5' },
+  header: { fontSize: 22, fontWeight: 'bold', marginBottom: 16 },
+  debugInfo: { 
+    backgroundColor: '#fff', 
+    padding: 12, 
     marginBottom: 16,
-    textAlign: 'center'
+    borderRadius: 8
   },
-  accountInfo: {
+  input: { 
+    borderWidth: 1, 
+    borderColor: '#ccc', 
+    padding: 12, 
     marginBottom: 16,
-    padding: 12,
     backgroundColor: '#fff',
     borderRadius: 8
   },
-  buttonContainer: {
-    marginBottom: 16,
-    gap: 8
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 10,
-    marginBottom: 16,
-    borderRadius: 6,
-    backgroundColor: '#fff'
-  },
-  webview: {
-    height: 400,
-    marginBottom: 16
-  },
-  photosList: {
-    maxHeight: 200,
-    marginBottom: 16,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 12
-  },
-  logContainer: {
+  logContainer: { 
     flex: 1,
     backgroundColor: '#fff',
     borderRadius: 8,
     padding: 12
   },
   sectionHeader: {
-    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 8
-  },
-  photoItem: {
-    padding: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee'
-  },
-  errorText: {
-    color: '#d32f2f',
-    fontSize: 12
+    marginBottom: 8,
+    color: '#333'
   },
   logItem: {
     paddingVertical: 8,
@@ -538,11 +285,13 @@ const styles = StyleSheet.create({
     borderBottomColor: '#eee'
   },
   logText: {
-    fontSize: 12
+    fontSize: 12,
+    fontFamily: 'monospace'
   },
   logDetails: {
     fontSize: 10,
-    color: '#757575'
+    color: '#666',
+    fontFamily: 'monospace'
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -551,7 +300,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.8)'
   },
   loadingText: {
-    marginTop: 16
+    marginTop: 16,
+    fontSize: 16
   }
 });
 
