@@ -2,27 +2,6 @@ from celery import shared_task
 from .utils import get_photos_service, download_photo, upload_photo, get_photos
 from .models import MigrationStatus
 from django.core.mail import EmailMessage
-<<<<<<< HEAD
-
-
-@shared_task(bind=True)
-def migrate_all_photos_task(self, user_id, email_id, source_credentials, destination_credentials):
-    
-    task_status, created = MigrationStatus.objects.get_or_create(
-            task_id = self.request.id,
-            user_id=user_id,
-        )
-
-    task_status.status = "IN_PROGRESS"
-    task_status.save()
-
-
-<<<<<<< HEAD
-    destination_service = get_photos_service(destination_credentials)
-    current_page_token = None
-    all_photos = []
-=======
-=======
 import logging
 logger = logging.getLogger(__name__)
 import time
@@ -45,7 +24,6 @@ def migrate_all_photos_task(self, user_id, email_id, source_credentials, destina
         all_photos = []
         migrated_count = 0
 
->>>>>>> origin/main
         # Paginate through source photos
         while True:
             try:
@@ -57,25 +35,6 @@ def migrate_all_photos_task(self, user_id, email_id, source_credentials, destina
                 task_status.save()
 
                 raise self.retry(exc=e)
-<<<<<<< HEAD
->>>>>>> 3e5d234f (added sleep timer for this to avoid rate limiting)
-
-    while True:
-        photos, next_page_token = get_photos(source_credentials, current_page_token)
-        all_photos.extend(photos)
-
-        for photo in photos:
-            file_url = photo['baseUrl'] + "=d"
-            file_name = photo['filename']
-            photo_data = download_photo(file_url)
-            if photo_data:
-                upload_photo(destination_service, photo_data, file_name)
-
-<<<<<<< HEAD
-        if not next_page_token:
-            break
-=======
-=======
 
             all_photos.extend(photos)
 
@@ -83,7 +42,6 @@ def migrate_all_photos_task(self, user_id, email_id, source_credentials, destina
                 file_url = photo['baseUrl'] + "=d"
                 file_name = photo['filename']
 
->>>>>>> origin/main
                 try:
                     photo_data = download_photo(file_url)
                     if photo_data:
@@ -96,21 +54,6 @@ def migrate_all_photos_task(self, user_id, email_id, source_credentials, destina
                     logger.error(f"Failed to migrate photo {file_name}: {e}")
                     # Log and continue migrating other photos
                     continue
-<<<<<<< HEAD
->>>>>>> 3e5d234f (added sleep timer for this to avoid rate limiting)
-
-    result_message = f"Migrated {len(all_photos)} photos"
-
-    task_status.status = "SUCCESS"
-    task_status.result = result_message
-    task_status.migrated_count = len(all_photos)
-    task_status.save()
-
-    message = f"{len(all_photos)} migrated from your account. Thanks for choosing CODEMOS"
-    email = EmailMessage('Migrated photos', message, to=[email_id])
-    email.send()
-    return result_message  # Return the count of migrated photos
-=======
 
             if not next_page_token:
                 break
@@ -139,7 +82,6 @@ def migrate_all_photos_task(self, user_id, email_id, source_credentials, destina
         task_status.save()
         raise self.retry(exc=e)
 
->>>>>>> origin/main
 
 
 @shared_task(bind=True)
