@@ -108,10 +108,7 @@ DATABASES = {
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'SCOPE': ['profile', 'email', 'https://mail.google.com/',  'https://www.googleapis.com/auth/photoslibrary'],
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         'AUTH_PARAMS': {
             'access_type': 'offline',
             'prompt' : 'consent' 
