@@ -175,15 +175,4 @@ cython_debug/
 
 virtual/
 PhotoPurge/.DS_Store
-<<<<<<< HEAD
 
-PhotoPurge/backup.sql
-PhotoPurge/credentials_local.json
-PhotoPurge/gmailapp/providers.py
-PhotoPurge/gmailapp/templates/accounts/
-PhotoPurge/photos/.DS_Store
-android-app/GooglePhotosMigrator/
-django/
-moodle_key.pem
-=======
->>>>>>> origin/main
