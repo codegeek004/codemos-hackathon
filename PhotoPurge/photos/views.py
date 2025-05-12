@@ -64,8 +64,6 @@ def retrieve_credentials_for_user(user):
         raise Exception("No Google token found for this user.")
 
 
-       
-    
 
 def migrate_photos(request):
     print('inside migrate photos')
@@ -100,6 +98,11 @@ def migrate_photos(request):
     destination_credentials = request.session.get('destination_credentials')
     print('dest creds', destination_credentials)
 
+<<<<<<< HEAD
+=======
+    
+
+>>>>>>> origin/main
     if request.method == 'POST' and 'action' in request.POST:
         if not destination_credentials:
             messages.error(request, 'Destination address not selected')
@@ -113,7 +116,11 @@ def migrate_photos(request):
             creds = retrieve_credentials_for_user(request.user)
             src_creds = {'token':creds.token, 'refresh_token':creds.refresh_token}
             if destination_credentials:
+<<<<<<< HEAD
                 task = migrate_all_photos_task.delay(src_creds, destination_credentials)
+=======
+                task = migrate_all_photos_task.delay(request.user.id, request.user.email, src_creds, destination_credentials)
+>>>>>>> origin/main
                 messages.success(request, f"Migrating all photos. Task ID: {task.id}")
                 return redirect('migrate_photos')
 
@@ -138,7 +145,11 @@ def migrate_photos(request):
 
 
 
+<<<<<<< HEAD
                 task = migrate_selected_photos_task.delay(src_creds, destination_credentials, selected_photo_ids)
+=======
+                task = migrate_selected_photos_task.delay(request.user.id, request.user.email, src_creds, destination_credentials, selected_photo_ids)
+>>>>>>> origin/main
                 print('on botom of task')
                 print(f"task{task}")
                 messages.success(request, f"Migrating selected photos. Task ID: {task.id}")
