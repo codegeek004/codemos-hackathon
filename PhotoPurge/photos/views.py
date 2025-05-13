@@ -112,7 +112,8 @@ def migrate_photos(request):
             creds = retrieve_credentials_for_user(request.user)
             src_creds = {'token':creds.token, 'refresh_token':creds.refresh_token}
             if destination_credentials:
-                task = migrate_all_photos_task.delay(src_creds, destination_credentials)
+                task = migrate_all_photos_task.delay(request.user.id, request.user.email, src_creds, destination_credentials)
+
 
                 messages.success(request, f"Migrating all photos. Task ID: {task.id}")
                 return redirect('migrate_photos')
