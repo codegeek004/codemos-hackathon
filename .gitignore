@@ -175,4 +175,4 @@ cython_debug/
 
 virtual/
 PhotoPurge/.DS_Store
-
+PhotoPurge/gmailapp/migrations/
