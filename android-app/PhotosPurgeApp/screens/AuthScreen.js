@@ -3,20 +3,32 @@ import { useState } from 'react';
 import { Button, View, Text, FlatList } from 'react-native';
 import TransferButton from '../components/TransferButton';
 
-const { PhotosAuth } = NativeModules;
+const { PhotosAuthModule } = NativeModules; // ✅ Make sure this matches your native code!
 
 export default function AuthScreen() {
   const [accounts, setAccounts] = useState([]);
   const [tokenInfo, setTokenInfo] = useState(null);
 
   const fetchAccounts = async () => {
-    const accs = await PhotosAuth.listGoogleAccounts();
-    setAccounts(accs);
+    try {
+      console.log('📢 [fetchAccounts] Button clicked');
+      const accs = await PhotosAuthModule.listGoogleAccounts();
+      console.log('✅ [fetchAccounts] Received accounts:', accs);
+      setAccounts(accs);
+    } catch (e) {
+      console.error('❌ [fetchAccounts] Failed to list accounts:', e);
+    }
   };
 
   const getTokenFor = async (accountName) => {
-    const tokenData = await PhotosAuth.getToken(accountName);
-    setTokenInfo(tokenData);
+    try {
+      console.log(`📢 [getTokenFor] Getting token for: ${accountName}`);
+      const tokenData = await PhotosAuthModule.getToken(accountName);
+      console.log('✅ [getTokenFor] Received token data:', tokenData);
+      setTokenInfo(tokenData);
+    } catch (e) {
+      console.error('❌ [getTokenFor] Failed to get token:', e);
+    }
   };
 
   return (
