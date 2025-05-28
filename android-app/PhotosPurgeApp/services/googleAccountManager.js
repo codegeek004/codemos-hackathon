@@ -1,12 +1,12 @@
 import {NativeModules} from 'react-native';
-const {PhotosAuthModule} = NativeModules;
+const {PhotosAuth} = NativeModules;
 
 export const getGoogleAccounts = async () => {
-  return await PhotosAuthModule.getAccounts();
+  return await PhotosAuth.getAccounts();
 };
 
 export const getAuthToken = async email => {
-  return await PhotosAuthModule.getToken(email);
+  return await PhotosAuth.getToken(email);
 };
 
 // services/photoTransfer.js
