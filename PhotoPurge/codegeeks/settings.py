@@ -126,8 +126,8 @@ SOCIALACCOUNT_PROVIDERS = {
         },
         'OAUTH_PKCE_ENABLED': True,
         'APP': {
-              'client_id': '99034799467-m8dh7cdtpfquud1jvt21eup1t5vuk7fv.apps.googleusercontent.com',
-              'secret': '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',
+              'client_id': '99034799467-hl9dbl4t4l64gftesd8bokb1no6kbgu3.apps.googleusercontent.com',
+              'secret': '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',
             # for local development
             #'client_id': '99034799467-6l1lm0l6b80h2bcmon2i8st2odg778nj.apps.googleusercontent.com',
             #'secret': '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',
@@ -201,7 +201,7 @@ CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SECURE = True
 
 #configuration for celery redis message queue working in background for executing tasks defined in tasks module of both apps
-CELERY_BROKER_URL = 'redis://localhost:6379/0'  # URL for Redis
+CELERY_BROKER_URL = 'redis://localhost:6379/0'  
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
