@@ -33,7 +33,7 @@ def get_google_auth_flow(redirect_uri):
 def destination_google_auth(request):
     print('destination google auth mai gaya')
 
-    flow = get_google_auth_flow('https://del.codemos.in/photos/destination/auth/callback/')
+    flow = get_google_auth_flow('https://codemos-services.co.in/photos/destination/auth/callback/')
     # for local testing
     #flow = get_google_auth_flow('https://127.0.0.1:8000/photos/destination/auth/callback/')
     authorization_url, state = flow.authorization_url(access_type='offline', prompt='select_account')
@@ -45,7 +45,7 @@ def destination_google_auth_callback(request):
     if 'code' not in request.GET:
         return redirect('dest-oauth')
 
-    flow = get_google_auth_flow('https://del.codemos.in/photos/destination/auth/callback/')
+    flow = get_google_auth_flow('https://codemos-services.co.in/photos/destination/auth/callback/')
     # for local testing
     #flow = get_google_auth_flow('https://127.0.0.1:8000/photos/destination/auth/callback/')
     flow.fetch_token(authorization_response=request.build_absolute_uri())
