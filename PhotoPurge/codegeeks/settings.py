@@ -96,8 +96,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'gmail',
-        'USER': 'root',
-        'PASSWORD': 'root',
+        'USER': 'ajay',
+        'PASSWORD': 'Root@123',
         'HOST': 'localhost',
         'PORT': 3306,
     }
