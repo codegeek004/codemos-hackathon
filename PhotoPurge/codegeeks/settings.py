@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 import os
 from pathlib import Path
-
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -127,10 +127,7 @@ SOCIALACCOUNT_PROVIDERS = {
         'OAUTH_PKCE_ENABLED': True,
         'APP': {
               'client_id': '99034799467-hl9dbl4t4l64gftesd8bokb1no6kbgu3.apps.googleusercontent.com',
-              'secret': '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',
-            # for local development
-            #'client_id': '99034799467-6l1lm0l6b80h2bcmon2i8st2odg778nj.apps.googleusercontent.com',
-            #'secret': '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',
+              'secret': 'GOC*******q9o',
             'key': ''
         }
     }   
@@ -210,7 +207,7 @@ CELERY_TASK_TIME_LIMIT = 43200
 
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://del.codemos.in',
+    'https://codemos-services.co.in',
 ]
 
 #smtp configurations
@@ -218,7 +215,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_HOST_USER = 'codegeek004@gmail.com'
-EMAIL_HOST_PASSWORD = 'gotd ijwh xejj olmr' 
+EMAIL_HOST_PASSWORD = config(gmail_app_password, cast=str) 
 
 EMAIL_PORT = 587
 
