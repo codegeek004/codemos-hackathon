@@ -96,8 +96,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'gmail',
-        'USER': 'ajay',
-        'PASSWORD': 'Root@123',
+        'USER': 'root',
+        'PASSWORD': 'root',
         'HOST': 'localhost',
         'PORT': 3306,
     }
@@ -126,8 +126,8 @@ SOCIALACCOUNT_PROVIDERS = {
         },
         'OAUTH_PKCE_ENABLED': True,
         'APP': {
-              'client_id': '99034799467-hl9dbl4t4l64gftesd8bokb1no6kbgu3.apps.googleusercontent.com',
-              'secret': 'GOC*******q9o',
+              'client_id': config('client_id', cast=str),
+              'secret': config('client_secret', cast=str),
             'key': ''
         }
     }   
@@ -215,7 +215,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_HOST_USER = 'codegeek004@gmail.com'
-EMAIL_HOST_PASSWORD = config(gmail_app_password, cast=str) 
+EMAIL_HOST_PASSWORD = config('gmail_app_password', cast=str) 
 
 EMAIL_PORT = 587
 
