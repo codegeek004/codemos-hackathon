@@ -8,6 +8,12 @@ from django.contrib.auth import logout
 from django.shortcuts import render, redirect
 import requests
 import json
+from datetime import datetime, timezone, timedelta
+from django.utils.timezone import make_aware
+from .models import *
+from django.utils.timezone import now
+
+
 #CLIENT_SECRETS_FILE = "credentials.json"
 #for local testing
 CLIENT_SECRETS_FILE = "credentials_local.json"
@@ -36,7 +42,7 @@ def destination_google_auth(request):
     #flow = get_google_auth_flow('https://codemos-services.co.in/photos/destination/auth/callback/')
     # for local testing
     flow = get_google_auth_flow('https://127.0.0.1:8000/photos/destination/auth/callback/')
-    authorization_url, state = flow.authorization_url(access_type='offline', prompt='select_account')
+    authorization_url, state = flow.authorization_url(access_type='offline', prompt='consent')
     return redirect(authorization_url)
 
 
@@ -47,25 +53,65 @@ def destination_google_auth_callback(request):
 
     #flow = get_google_auth_flow('https://codemos-services.co.in/photos/destination/auth/callback/')
     # for local testing
-    flow = get_google_auth_flow('https://127.0.0.1:8000/photos/destination/auth/callback/')
-    flow.fetch_token(authorization_response=request.build_absolute_uri())
-    credentials = flow.credentials
-    print('creds in destination auth callback', credentials)
-    dest_creds = credentials_to_dict(credentials)
+    try:
+        print('inside try of get flow')
+        flow = get_google_auth_flow('https://127.0.0.1:8000/photos/destination/auth/callback/')
+        flow.fetch_token(authorization_response=request.build_absolute_uri())
+        credentials = flow.credentials
+        
+
+        print('creds in destination auth callback', credentials)
+        
+        dest_creds = credentials_to_dict(credentials)
+        print('flow try ends')
+    except Exception as e:
+        print(f"exception in flow get_google_auth_flow {e}")
+    
     print('\n\ndest creds', dest_creds)
-    request.session['destination_credentials'] = dest_creds
-    request.session['is_destination_authenticated'] = True
+    try:
+        print('inside try of request.session')
+        request.session['destination_credentials'] = dest_creds
+        request.session['is_destination_authenticated'] = True
+        print(f'\n{request.session}\n')
+        print('try ends of request.session')
+    except Exception as e:
+        print(f'exception in request.session, {e}')
+    print('on top of destination token query')
+    
+    try:
+        DestinationToken.objects.update_or_create(
+            user=request.user,
+            defaults={
+                'token': credentials.token,
+                'refresh_token': credentials.refresh_token,
+                'token_uri': credentials.token_uri,
+                'client_id': credentials.client_id,
+                'client_secret': credentials.client_secret,
+                'scopes': ' '.join(credentials.scopes),
+                'expiry': credentials.expiry if credentials.expiry else None,
+            }
+        )
+        print('destination email k upar')
+        # **Fetch and validate destination email**
+        destination_email = request.session.get('destination_email', None)
+    except Exception as e:
+        print(f'inside exception of token insert query, {e}')
 
-    # **Fetch and validate destination email**
-    destination_email = request.session.get('destination_email', None)
-
-    # **Fetch user info to confirm token validity**
-    userinfo = fetch_user_info(credentials)
-
-    if userinfo:
-        email = userinfo.get('email')
-        print('email', email)
-    print('userinfo', userinfo)
+    try:
+        print('userinfo k upar destination email k niche')
+        # **Fetch user info to confirm token validity**
+        userinfo = fetch_user_info(credentials)
+        print('userinfo k niche if condition k upar')
+        if userinfo:
+            print('if userinfo k andar')
+            email = userinfo.get('email')
+            print('email', email)
+        else:
+            print('userinfo is none')
+        print('userinfo', userinfo)
+        print('redirect migrate photos k upar')
+    except Exception as e:
+        print(f'exception raised in userinfo fetch {e}')
     return redirect('migrate_photos')
 
 
