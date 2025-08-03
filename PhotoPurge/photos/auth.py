@@ -12,7 +12,9 @@ from datetime import datetime, timezone, timedelta
 from django.utils.timezone import make_aware
 from .models import *
 from django.utils.timezone import now
+from django.contrib.auth import get_user_model
 
+user = get_user_model()
 
 #CLIENT_SECRETS_FILE = "credentials.json"
 #for local testing
@@ -45,26 +47,34 @@ def destination_google_auth(request):
     authorization_url, state = flow.authorization_url(access_type='offline', prompt='consent')
     return redirect(authorization_url)
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 def destination_google_auth_callback(request):
+    logger.info('Inside destination auth callback view')
     print('inside destination google auth callback')
     if 'code' not in request.GET:
+        logger.info('No code in request.GET')
         return redirect('dest-oauth')
 
     #flow = get_google_auth_flow('https://codemos-services.co.in/photos/destination/auth/callback/')
     # for local testing
     try:
+        logger.info('inside try of flow')
         print('inside try of get flow')
         flow = get_google_auth_flow('https://127.0.0.1:8000/photos/destination/auth/callback/')
         flow.fetch_token(authorization_response=request.build_absolute_uri())
         credentials = flow.credentials
         
-
+        logger.info('Credentials fetched: %s', credentials)
         print('creds in destination auth callback', credentials)
         
         dest_creds = credentials_to_dict(credentials)
+        logger.info('Dest creds converted to: %s', dest_creds)
         print('flow try ends')
     except Exception as e:
+        logger.error("Exception in flow get_google_auth_flow: %s", str(e))
         print(f"exception in flow get_google_auth_flow {e}")
     
     print('\n\ndest creds', dest_creds)
@@ -73,11 +83,14 @@ def destination_google_auth_callback(request):
         request.session['destination_credentials'] = dest_creds
         request.session['is_destination_authenticated'] = True
         print(f'\n{request.session}\n')
+        logger.info('Session set: %s', request.session)
         print('try ends of request.session')
     except Exception as e:
+        logger.error("Exception while setting session: %s", str(e))
         print(f'exception in request.session, {e}')
     print('on top of destination token query')
     
+    logger.info('Attempting to update or create DestinationToken.')
     try:
         DestinationToken.objects.update_or_create(
             user=request.user,
@@ -91,27 +104,43 @@ def destination_google_auth_callback(request):
                 'expiry': credentials.expiry if credentials.expiry else None,
             }
         )
+        logger.info('DestinationToken updated/created successfully.')
         print('destination email k upar')
         # **Fetch and validate destination email**
         destination_email = request.session.get('destination_email', None)
     except Exception as e:
+        logger.error("Exception in token insert query: %s", str(e))
         print(f'inside exception of token insert query, {e}')
 
+
+
+    logger.info('Fetching user info to validate destination email.')
     try:
-        print('userinfo k upar destination email k niche')
-        # **Fetch user info to confirm token validity**
-        userinfo = fetch_user_info(credentials)
-        print('userinfo k niche if condition k upar')
-        if userinfo:
-            print('if userinfo k andar')
-            email = userinfo.get('email')
-            print('email', email)
+        userinfo_url = "https://openidconnect.googleapis.com/v1/userinfo"
+        headers = {
+            "Authorization": f"Bearer {credentials.token}"
+        }
+        response = requests.get(userinfo_url, headers=headers)
+
+        print("UserInfo Response Code:", response.status_code)
+        print("UserInfo Response:", response.text)
+
+        if response.status_code == 200:
+            userinfo = response.json()
         else:
-            print('userinfo is none')
-        print('userinfo', userinfo)
-        print('redirect migrate photos k upar')
+            userinfo = None
     except Exception as e:
+        logger.error("Exception raised in userinfo fetch: %s", str(e))
         print(f'exception raised in userinfo fetch {e}')
+
+    try:
+        user = request.user
+        user.email = userinfo.get('email', user.email)
+        user.first_name = userinfo.get('given_name', user.first_name)
+        user.last_name = userinfo.get('family_name', user.last_name)
+        user.save()
+    except Exception as e:
+        print(f'Error inserting userinfo into db exception {e}')
     return redirect('migrate_photos')
 
 
