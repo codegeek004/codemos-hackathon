@@ -1,36 +1,41 @@
-from django.utils.timezone import now, make_aware
-from datetime import datetime, timezone, timedelta
-from allauth.socialaccount.models import SocialToken, SocialAccount
+from allauth.socialaccount.models import SocialAccount, SocialToken
+from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
-from .utils import retrieve_credentials_for_user  # your custom function
+from django.utils.timezone import is_naive, make_aware
+import logging
+from decouple import config
 
-class TokenRefreshMiddleware:
+logger = logging.getLogger(__name__)
+
+class SourceTokenRefreshMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
         if request.user.is_authenticated:
             try:
-                creds = retrieve_credentials_for_user(request.user.id)
+                account = SocialAccount.objects.get(user=request.user, provider='google')
+                token = SocialToken.objects.get(account=account)
 
-                # Convert string/naive to aware datetime
-                if isinstance(creds.expiry, str):
-                    creds.expiry = datetime.fromisoformat(creds.expiry)
-                if creds.expiry.tzinfo is None:
-                    creds.expiry = make_aware(creds.expiry, timezone.utc)
+                creds = Credentials(
+                    token=token.token,
+                    refresh_token=token.token_secret,
+                    token_uri="https://oauth2.googleapis.com/token",
+                    client_id=config('client_id',cast=str),
+                    client_secret=config('client_secret',cast=str),
+                    expiry=make_aware(token.expires_at) if is_naive(token.expires_at) else token.expires_at
+                )
 
-                if creds.expiry - now() < timedelta(minutes=30):
+                if creds.expired and creds.refresh_token:
                     creds.refresh(Request())
+                    token.token = creds.token
+                    token.expires_at = creds.expiry
+                    token.save()
+                    logger.info(f"Refreshed source token for {request.user.email}")
 
-                    # Save refreshed token to SocialToken
-                    social_account = SocialAccount.objects.get(user=request.user, provider='google')
-                    social_token = SocialToken.objects.get(account=social_account)
-                    social_token.token = creds.token
-                    social_token.expires_at = creds.expiry
-                    social_token.save()
-
+            except (SocialAccount.DoesNotExist, SocialToken.DoesNotExist):
+                logger.debug(f"No source token found for {request.user}")
             except Exception as e:
-                print("Token refresh failed:", e)
+                logger.warning(f"Error refreshing source token: {e}")
 
         return self.get_response(request)
-
