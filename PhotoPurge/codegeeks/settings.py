@@ -64,7 +64,9 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
-    'gmailapp.middleware.TokenRefreshMiddleware',
+    'gmailapp.middleware.SourceTokenRefreshMiddleware',
+    'photos.middleware.RefreshDestinationTokenMiddleware',
+    
 ]
 
 ROOT_URLCONF = 'codegeeks.urls'
@@ -95,7 +97,7 @@ WSGI_APPLICATION = 'codegeeks.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'gmail',
+        'NAME': 'photospurge',
         'USER': 'root',
         'PASSWORD': 'root',
         'HOST': 'localhost',
@@ -220,9 +222,14 @@ EMAIL_HOST_PASSWORD = config('gmail_app_password', cast=str)
 EMAIL_PORT = 587
 
 
-ALLAUTH_UI_THEME = "light"
+ALLAUTH_UI_THEME = "dark"
 
 #custom user model
 AUTH_USER_MODEL = 'gmailapp.CustomUser'
+
+USE_TZ = True
+TIME_ZONE = 'Asia/Kolkata'
+
+
 
 
