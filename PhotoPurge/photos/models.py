@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.db import models
 class MigrationStatus(models.Model):
 	user = models.ForeignKey('gmailapp.CustomUser', on_delete=models.CASCADE) 
 	task_id = models.CharField(max_length=200, unique=True)
@@ -8,3 +8,12 @@ class MigrationStatus(models.Model):
 	migrated_count = models.IntegerField(default=0)
 	created_at = models.DateTimeField(auto_now_add=True)
 
+class DestinationToken(models.Model):
+    user = models.ForeignKey('gmailapp.CustomUser', on_delete=models.CASCADE)
+    token = models.TextField()
+    refresh_token = models.TextField()
+    token_uri = models.TextField()
+    client_id = models.TextField()
+    client_secret = models.TextField()
+    scopes = models.TextField()
+    expiry = models.DateTimeField(null=True, blank=True)
