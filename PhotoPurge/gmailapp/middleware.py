@@ -4,6 +4,8 @@ from google.auth.transport.requests import Request
 from django.utils.timezone import is_naive, make_aware
 import logging
 from decouple import config
+from gmailapp.utils import ensure_aware
+from datetime import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -23,10 +25,12 @@ class SourceTokenRefreshMiddleware:
                     token_uri="https://oauth2.googleapis.com/token",
                     client_id=config('client_id',cast=str),
                     client_secret=config('client_secret',cast=str),
-                    expiry=make_aware(token.expires_at) if is_naive(token.expires_at) else token.expires_at
-                )
+                    
 
-                if creds.expired and creds.refresh_token:
+                )
+                creds.expiry = ensure_aware(token.expires_at)
+                print(creds.expiry, 'source token expite', type(creds.expiry))
+                if creds.expiry and creds.refresh_token:
                     creds.refresh(Request())
                     token.token = creds.token
                     token.expires_at = creds.expiry
