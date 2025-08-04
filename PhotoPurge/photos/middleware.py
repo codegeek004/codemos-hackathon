@@ -4,7 +4,7 @@ from google.auth.transport.requests import Request
 from django.utils.timezone import make_aware, is_naive, now
 from .models import DestinationToken
 import logging
-from gmailapp.utils import ensure_aware
+# from gmailapp.utils import ensure_aware
 from datetime import timezone
 
 
