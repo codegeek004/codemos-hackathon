@@ -1,5 +1,6 @@
 from django.db import models
-from django.db import models
+from django.utils.timezone import now
+
 class MigrationStatus(models.Model):
 	user = models.ForeignKey('gmailapp.CustomUser', on_delete=models.CASCADE) 
 	task_id = models.CharField(max_length=200, unique=True)
@@ -16,4 +17,4 @@ class DestinationToken(models.Model):
     client_id = models.TextField()
     client_secret = models.TextField()
     scopes = models.TextField()
-    expiry = models.DateTimeField(null=True, blank=True)
+    expiry = models.DateTimeField(default=now(), null=True, blank=True)
