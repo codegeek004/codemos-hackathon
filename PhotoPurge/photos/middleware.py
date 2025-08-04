@@ -1,11 +1,12 @@
 from django.utils.deprecation import MiddlewareMixin
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
-from django.utils.timezone import make_aware, is_naive
+from django.utils.timezone import make_aware, is_naive, now
 from .models import DestinationToken
 import logging
 from gmailapp.utils import ensure_aware
 from datetime import timezone
+
 
 logger = logging.getLogger(__name__)
 
@@ -25,18 +26,29 @@ class RefreshDestinationTokenMiddleware(MiddlewareMixin):
                 token_uri=token_obj.token_uri,
                 client_id=token_obj.client_id,
                 client_secret=token_obj.client_secret,
-                # expiry=token_obj.expiry
+                expiry=token_obj.expiry
             )
+            expiry = token_obj.expiry  # or token_obj.expiry for destination
+            print('creds k niche', creds.expiry)
+            if expiry:
+                print('if creds k andar')
+                if is_naive(expiry):
+                    print('if is_naive k andar')
+                    expiry = make_aware(expiry, timezone.utc)
+                    print('expiry hai', expiry)
+                else:
+                    print('else k andar')
+                    expiry = expiry.astimezone(timezone.utc)
+                    print('idhar expiry', expiry)
+            creds.expiry = expiry
+            print('final creds', creds.expiry)
+            #
+            # logger.debug(f"Destination token expiry: {token_obj.expiry}, type: {type(token_obj.expiry)}")
 
-            # logger.debug(f"[PRE] token.expires_at: {token_obj.expiry}, tzinfo: {getattr(token_obj.expiry, 'tzinfo', None)}")
+            # print('dest token exp', creds.expiry)
+            # logger.info(f"Token expiry after ensure_aware: {creds.expiry}, tzinfo: {creds.expiry.tzinfo}")
 
-
-            # creds.expiry = ensure_aware(token_obj.expiry)
-            creds.expiry = ensure_aware(token_obj.expiry).astimezone(timezone.utc)
-            print('dest token exp', creds.expiry)
-            logger.info(f"Token expiry after ensure_aware: {creds.expiry}, tzinfo: {creds.expiry.tzinfo}")
-
-            if creds.expired and creds.refresh_token:
+            if creds.expiry and creds.expiry <= now() and creds.refresh_token:
                 logger.info(f"Refreshing token for user {request.user.email}")
                 creds.refresh(Request())
 
