@@ -9,9 +9,9 @@ from django.shortcuts import render, redirect
 import requests
 import json
 from datetime import datetime, timezone, timedelta
-from django.utils.timezone import make_aware
+from django.utils.timezone import make_aware, is_naive, now
+from datetime import timezone
 from .models import *
-from django.utils.timezone import now
 from django.contrib.auth import get_user_model
 
 user = get_user_model()
@@ -66,6 +66,9 @@ def destination_google_auth_callback(request):
         flow = get_google_auth_flow('https://127.0.0.1:8000/photos/destination/auth/callback/')
         flow.fetch_token(authorization_response=request.build_absolute_uri())
         credentials = flow.credentials
+        expiry = credentials.expiry
+        if expiry and is_naive(expiry):
+            expiry = make_aware(expiry, timezone.utc)   
         
         logger.info('Credentials fetched: %s', credentials)
         print('creds in destination auth callback', credentials)
@@ -101,7 +104,7 @@ def destination_google_auth_callback(request):
                 'client_id': credentials.client_id,
                 'client_secret': credentials.client_secret,
                 'scopes': ' '.join(credentials.scopes),
-                'expiry': credentials.expiry if credentials.expiry else None,
+                'expiry': expiry
             }
         )
         logger.info('DestinationToken updated/created successfully.')
