@@ -17,4 +17,5 @@ class DestinationToken(models.Model):
     client_id = models.TextField()
     client_secret = models.TextField()
     scopes = models.TextField()
-    expiry = models.DateTimeField(default=now(), null=True, blank=True)
+    expires_at = models.DateTimeField(default=now(), null=True, blank=True)
+    created_at = models.DateTimeField(auto_now=True)
