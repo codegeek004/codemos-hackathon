@@ -41,10 +41,10 @@ def get_google_auth_flow(redirect_uri):
 def destination_google_auth(request):
     print('destination google auth mai gaya')
 
-    #flow = get_google_auth_flow('https://codemos-services.co.in/photos/destination/auth/callback/')
+    # flow = get_google_auth_flow('https://del.codemos.in/photos/destination/auth/callback/')
     # for local testing
     flow = get_google_auth_flow('https://127.0.0.1:8000/photos/destination/auth/callback/')
-    authorization_url, state = flow.authorization_url(access_type='offline', prompt='consent')
+    authorization_url, state = flow.authorization_url(access_type='offline', prompt='select_account')
     return redirect(authorization_url)
 
 import logging
@@ -58,28 +58,13 @@ def destination_google_auth_callback(request):
         logger.info('No code in request.GET')
         return redirect('dest-oauth')
 
-    #flow = get_google_auth_flow('https://codemos-services.co.in/photos/destination/auth/callback/')
+    # flow = get_google_auth_flow('https://del.codemos.in/photos/destination/auth/callback/')
     # for local testing
-    try:
-        logger.info('inside try of flow')
-        print('inside try of get flow')
-        flow = get_google_auth_flow('https://127.0.0.1:8000/photos/destination/auth/callback/')
-        flow.fetch_token(authorization_response=request.build_absolute_uri())
-        credentials = flow.credentials
-        expiry = credentials.expiry
-        if expiry and is_naive(expiry):
-            expiry = make_aware(expiry, timezone.utc)   
-        
-        logger.info('Credentials fetched: %s', credentials)
-        print('creds in destination auth callback', credentials)
-        
-        dest_creds = credentials_to_dict(credentials)
-        logger.info('Dest creds converted to: %s', dest_creds)
-        print('flow try ends')
-    except Exception as e:
-        logger.error("Exception in flow get_google_auth_flow: %s", str(e))
-        print(f"exception in flow get_google_auth_flow {e}")
-    
+    flow = get_google_auth_flow('https://127.0.0.1:8000/photos/destination/auth/callback/')
+    flow.fetch_token(authorization_response=request.build_absolute_uri())
+    credentials = flow.credentials
+    print('creds in destination auth callback', credentials)
+    dest_creds = credentials_to_dict(credentials)
     print('\n\ndest creds', dest_creds)
     try:
         print('inside try of request.session')
