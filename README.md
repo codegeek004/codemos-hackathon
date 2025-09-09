@@ -88,13 +88,15 @@ python manage.py collectstatic
 
       * **Google Photos Library API**
       * **OAuth 2.0 Client ID**
+      * **Gmail API**
 
 4.  Configure the **OAuth Consent Screen**:
 
       * Select `External` if sharing with other users.
       * Fill in app details (name, logo, support email).
-      * Add scopes: `../auth/photoslibrary.appendonly` and `../auth/photoslibrary.readonly`.
-      * Add test users (your Gmail accounts for migration).
+      * Add scopes: `../auth/photoslibrary.appendonly`, `../auth/photoslibrary.readonly` 
+        and`.../auth/gmail.readonly`
+
 
 5.  Create **OAuth 2.0 Client ID**:
 
