@@ -31,7 +31,7 @@
 ### 1. Clone Repository
 
 ```bash
-git clone [https://github.com/yourusername/photospurge.git](https://github.com/yourusername/photospurge.git)
+git clone git@github.com:codegeek004/codemos-hackathon.git
 cd photospurge
 ````
 
