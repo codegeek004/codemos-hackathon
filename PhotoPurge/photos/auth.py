@@ -1,3 +1,4 @@
+import logging
 from django.contrib.auth import login
 from django.contrib.auth.models import User
 from google.oauth2.credentials import Credentials
@@ -16,8 +17,8 @@ from django.contrib.auth import get_user_model
 
 user = get_user_model()
 
-#CLIENT_SECRETS_FILE = "credentials.json"
-#for local testing
+# CLIENT_SECRETS_FILE = "credentials.json"
+# for local testing
 CLIENT_SECRETS_FILE = "credentials_local.json"
 
 
@@ -36,18 +37,21 @@ def get_google_auth_flow(redirect_uri):
     )
     return flow
 
-#################destination auth##########################
+################# destination auth##########################
+
 
 def destination_google_auth(request):
     print('destination google auth mai gaya')
 
-    #flow = get_google_auth_flow('https://codemos-services.co.in/photos/destination/auth/callback/')
+    # flow = get_google_auth_flow('https://codemos-services.co.in/photos/destination/auth/callback/')
     # for local testing
-    flow = get_google_auth_flow('https://127.0.0.1:8000/photos/destination/auth/callback/')
-    authorization_url, state = flow.authorization_url(access_type='offline', prompt='consent')
+    flow = get_google_auth_flow(
+        'https://127.0.0.1:8000/photos/destination/auth/callback/')
+    authorization_url, state = flow.authorization_url(
+        access_type='offline', prompt='consent')
     return redirect(authorization_url)
 
-import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -58,28 +62,29 @@ def destination_google_auth_callback(request):
         logger.info('No code in request.GET')
         return redirect('dest-oauth')
 
-    #flow = get_google_auth_flow('https://codemos-services.co.in/photos/destination/auth/callback/')
+    # flow = get_google_auth_flow('https://codemos-services.co.in/photos/destination/auth/callback/')
     # for local testing
     try:
         logger.info('inside try of flow')
         print('inside try of get flow')
-        flow = get_google_auth_flow('https://127.0.0.1:8000/photos/destination/auth/callback/')
+        flow = get_google_auth_flow(
+            'https://127.0.0.1:8000/photos/destination/auth/callback/')
         flow.fetch_token(authorization_response=request.build_absolute_uri())
         credentials = flow.credentials
-        expiry = credentials.expiry
-        if expiry and is_naive(expiry):
-            expiry = make_aware(expiry, timezone.utc)   
-        
+        expires_at = credentials.expiry
+        if expires_at and is_naive(expires_at):
+            expires_at = make_aware(expires_at, timezone.utc)
+
         logger.info('Credentials fetched: %s', credentials)
         print('creds in destination auth callback', credentials)
-        
+
         dest_creds = credentials_to_dict(credentials)
         logger.info('Dest creds converted to: %s', dest_creds)
         print('flow try ends')
     except Exception as e:
         logger.error("Exception in flow get_google_auth_flow: %s", str(e))
         print(f"exception in flow get_google_auth_flow {e}")
-    
+
     print('\n\ndest creds', dest_creds)
     try:
         print('inside try of request.session')
@@ -92,7 +97,7 @@ def destination_google_auth_callback(request):
         logger.error("Exception while setting session: %s", str(e))
         print(f'exception in request.session, {e}')
     print('on top of destination token query')
-    
+
     logger.info('Attempting to update or create DestinationToken.')
     try:
         DestinationToken.objects.update_or_create(
@@ -104,7 +109,7 @@ def destination_google_auth_callback(request):
                 'client_id': credentials.client_id,
                 'client_secret': credentials.client_secret,
                 'scopes': ' '.join(credentials.scopes),
-                'expiry': expiry
+                'expires_at': expires_at
             }
         )
         logger.info('DestinationToken updated/created successfully.')
@@ -114,8 +119,6 @@ def destination_google_auth_callback(request):
     except Exception as e:
         logger.error("Exception in token insert query: %s", str(e))
         print(f'inside exception of token insert query, {e}')
-
-
 
     logger.info('Fetching user info to validate destination email.')
     try:
@@ -147,7 +150,7 @@ def destination_google_auth_callback(request):
     return redirect('migrate_photos')
 
 
-#####################logout#######################
+##################### logout#######################
 def logout_view(request):
     source_credentials = request.session.get('source_credentials')
     destination_credentials = request.session.get('destination_credentials')
@@ -171,16 +174,15 @@ def logout_view(request):
     return redirect('home')
 
 
-
-####################fetch user creds####################
+#################### fetch user creds####################
 def fetch_user_info(credentials):
     try:
         response = requests.get(
             'https://www.googleapis.com/oauth2/v1/userinfo',
             headers={'Authorization': f'Bearer {credentials.token}'}
         )
-        #response.raise_for_status()
-        if response.status_code==200 and response.headers.get('Content-Type') == 'application/json':
+        # response.raise_for_status()
+        if response.status_code == 200 and response.headers.get('Content-Type') == 'application/json':
             return response.json()
     except requests.exceptions.RequestException as e:
         print(f"Error fetching user info: {e}")
@@ -198,4 +200,3 @@ def credentials_to_dict(credentials):
         'client_secret': credentials.client_secret,
         'scopes': credentials.scopes
     }
-
