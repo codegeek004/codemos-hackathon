@@ -24,7 +24,6 @@ CLIENT_SECRETS_FILE = "credentials_local.json"
 
 def get_google_auth_flow(redirect_uri):
 
-    print('get google auth flow mai gaya')
     flow = Flow.from_client_secrets_file(
         CLIENT_SECRETS_FILE,
         scopes=[
@@ -43,9 +42,6 @@ def get_google_auth_flow(redirect_uri):
 
 def destination_google_auth(request):
 
-
-    print('destination google auth mai gaya')
-
     # flow = get_google_auth_flow('https://codemos-services.co.in/photos/destination/auth/callback/')
     # for local testing
     flow = get_google_auth_flow(
@@ -55,22 +51,14 @@ def destination_google_auth(request):
     return redirect(authorization_url)
 
 
-logger = logging.getLogger(__name__)
-
-
 def destination_google_auth_callback(request):
 
-    logger.info('Inside destination auth callback view')
-    print('inside destination google auth callback')
     if 'code' not in request.GET:
-        logger.info('No code in request.GET')
         return redirect('dest-oauth')
 
     # flow = get_google_auth_flow('https://codemos-services.co.in/photos/destination/auth/callback/')
     # for local testing
     try:
-        logger.info('inside try of flow')
-        print('inside try of get flow')
         flow = get_google_auth_flow(
             'https://127.0.0.1:8000/photos/destination/auth/callback/')
         flow.fetch_token(authorization_response=request.build_absolute_uri())
@@ -79,30 +67,16 @@ def destination_google_auth_callback(request):
         if expires_at and is_naive(expires_at):
             expires_at = make_aware(expires_at, timezone.utc)
 
-        logger.info('Credentials fetched: %s', credentials)
-        print('creds in destination auth callback', credentials)
-
         dest_creds = credentials_to_dict(credentials)
-        logger.info('Dest creds converted to: %s', dest_creds)
-        print('flow try ends')
     except Exception as e:
-        logger.error("Exception in flow get_google_auth_flow: %s", str(e))
         print(f"exception in flow get_google_auth_flow {e}")
 
-    print('\n\ndest creds', dest_creds)
     try:
-        print('inside try of request.session')
         request.session['destination_credentials'] = dest_creds
         request.session['is_destination_authenticated'] = True
-        print(f'\n{request.session}\n')
-        logger.info('Session set: %s', request.session)
-        print('try ends of request.session')
     except Exception as e:
-        logger.error("Exception while setting session: %s", str(e))
         print(f'exception in request.session, {e}')
-    print('on top of destination token query')
 
-    logger.info('Attempting to update or create DestinationToken.')
     try:
         DestinationToken.objects.update_or_create(
             user=request.user,
@@ -116,15 +90,11 @@ def destination_google_auth_callback(request):
                 'expires_at': expires_at
             }
         )
-        logger.info('DestinationToken updated/created successfully.')
-        print('destination email k upar')
         # **Fetch and validate destination email**
         destination_email = request.session.get('destination_email', None)
     except Exception as e:
-        logger.error("Exception in token insert query: %s", str(e))
         print(f'inside exception of token insert query, {e}')
 
-    logger.info('Fetching user info to validate destination email.')
     try:
         userinfo_url = "https://openidconnect.googleapis.com/v1/userinfo"
         headers = {
@@ -132,15 +102,11 @@ def destination_google_auth_callback(request):
         }
         response = requests.get(userinfo_url, headers=headers)
 
-        print("UserInfo Response Code:", response.status_code)
-        print("UserInfo Response:", response.text)
-
         if response.status_code == 200:
             userinfo = response.json()
         else:
             userinfo = None
     except Exception as e:
-        logger.error("Exception raised in userinfo fetch: %s", str(e))
         print(f'exception raised in userinfo fetch {e}')
 
     try:
@@ -150,7 +116,7 @@ def destination_google_auth_callback(request):
         user.last_name = userinfo.get('family_name', user.last_name)
         user.save()
     except Exception as e:
-            print(f'Error inserting userinfo into db exception {e}')
+        print(f'Error inserting userinfo into db exception {e}')
     return redirect('migrate_photos')
 
 
@@ -194,8 +160,6 @@ def fetch_user_info(credentials):
 
 
 def credentials_to_dict(credentials):
-    print('credentials to dict mai gaya')
-    print('creds to dict function mai gaya')
     return {
         'token': credentials.token,
         'refresh_token': credentials.refresh_token,

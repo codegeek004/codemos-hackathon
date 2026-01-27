@@ -9,8 +9,6 @@ import time
 import requests
 from datetime import datetime, timedelta
 
-logger = logging.getLogger(__name__)
-
 
 def refresh_credentials_if_needed(credentials_dict):
     """
@@ -30,22 +28,18 @@ def refresh_credentials_if_needed(credentials_dict):
         # Force check expiry - if not set or expired, refresh
         # Google tokens expire in 1 hour, so we refresh proactively
         if creds.expired and creds.refresh_token:
-            logger.info("Token expired, refreshing...")
             creds.refresh(Request())
             credentials_dict['token'] = creds.token
             credentials_dict['token_refreshed_at'] = datetime.utcnow()
-            logger.info("Token refreshed successfully")
         elif not creds.expiry:
             # No expiry info, refresh to be safe
-            logger.info("No expiry info, refreshing token...")
             creds.refresh(Request())
             credentials_dict['token'] = creds.token
             credentials_dict['token_refreshed_at'] = datetime.utcnow()
-            logger.info("Token refreshed successfully")
 
         return credentials_dict
     except Exception as e:
-        logger.error(f"Failed to refresh credentials: {e}")
+        print('Inside exception', e)
         raise
 
 
@@ -57,13 +51,13 @@ def refresh_if_older_than(credentials_dict, minutes=50):
 
     if not last_refresh:
         # First time or no tracking, refresh now
-        logger.info("No refresh timestamp found, refreshing token...")
+        print('TOken refreshed')
         return refresh_credentials_if_needed(credentials_dict)
 
     age = datetime.utcnow() - last_refresh
     if age > timedelta(minutes=minutes):
-        logger.info(
-            f"Token is {age.total_seconds()/60:.1f} minutes old, refreshing...")
+        print(
+            "Token is {age.total_seconds()/60:.1f} minutes old, refreshing...")
         return refresh_credentials_if_needed(credentials_dict)
 
     return credentials_dict
@@ -84,8 +78,7 @@ def download_photo_authenticated(file_url, access_token):
         return response.content
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == 403:
-            logger.error(f"403 Forbidden - Token may be expired or invalid")
-        logger.error(f"Error downloading photo: {e}")
+            print(f"403 Forbidden - Token may be expired or invalid")
         raise
 
 
@@ -102,7 +95,7 @@ def migrate_all_photos_task(self, user_id, email_id, source_credentials, destina
         task_status.save()
 
         # Refresh credentials before starting and mark the time
-        logger.info("Initial credential refresh...")
+        print("Initial credential refresh...")
         source_credentials = refresh_credentials_if_needed(source_credentials)
         source_credentials['token_refreshed_at'] = datetime.utcnow()
 
@@ -128,7 +121,7 @@ def migrate_all_photos_task(self, user_id, email_id, source_credentials, destina
                     source_credentials, current_page_token)
                 batch_counter += 1
             except Exception as e:
-                logger.error(f"Failed to fetch photos: {e}")
+                print(f"Failed to fetch photos: {e}")
                 task_status.status = "FAILED"
                 task_status.result = f"Error fetching photos: {e}"
                 task_status.save()
@@ -168,7 +161,7 @@ def migrate_all_photos_task(self, user_id, email_id, source_credentials, destina
                         time.sleep(10)
 
                 except Exception as e:
-                    logger.error(f"Failed to migrate photo {file_name}: {e}")
+                    print(f"Failed to migrate photo {file_name}: {e}")
                     # Log and continue migrating other photos
                     continue
 
@@ -189,12 +182,11 @@ def migrate_all_photos_task(self, user_id, email_id, source_credentials, destina
                                  message, to=[email_id])
             email.send()
         except Exception as e:
-            logger.error(f"Failed to send email to {email_id}: {e}")
+            print(f"Failed to send email to {email_id}: {e}")
 
         return result_message
 
     except Exception as e:
-        logger.error(f"Task failed: {e}")
         task_status.status = "FAILED"
         task_status.result = f"Error: {e}"
         task_status.save()
@@ -213,7 +205,7 @@ def migrate_selected_photos_task(self, user_id, source_email, source_credentials
         task_status.save()
 
         # Refresh credentials before starting
-        logger.info("Initial credential refresh...")
+        print("Initial credential refresh...")
         source_credentials = refresh_credentials_if_needed(source_credentials)
         source_credentials['token_refreshed_at'] = datetime.utcnow()
 
@@ -247,7 +239,7 @@ def migrate_selected_photos_task(self, user_id, source_email, source_credentials
                     upload_photo(destination_service, photo_data, file_name)
                     migrated_count += 1
             except Exception as e:
-                logger.error(f"Failed to migrate photo {file_name}: {e}")
+                print(f"Failed to migrate photo {file_name}: {e}")
                 continue
 
         result_message = f"Migrated {migrated_count} photos"
@@ -264,7 +256,7 @@ def migrate_selected_photos_task(self, user_id, source_email, source_credentials
         return result_message
 
     except Exception as e:
-        logger.error(f"Selected photos migration failed: {e}")
+        print(f"Selected photos migration failed: {e}")
         task_status.status = "FAILED"
         task_status.result = f"Error: {e}"
         task_status.save()
