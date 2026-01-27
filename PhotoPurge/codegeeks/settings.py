@@ -64,13 +64,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
-<<<<<<< HEAD
-    
-=======
     # 'gmailapp.middleware.SourceTokenRefreshMiddleware',
     # 'photos.middleware.RefreshDestinationTokenMiddleware',
-
->>>>>>> origin/main
 ]
 
 ROOT_URLCONF = 'codegeeks.urls'
