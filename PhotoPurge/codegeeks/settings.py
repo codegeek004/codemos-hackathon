@@ -28,7 +28,6 @@ DEBUG = True
 ALLOWED_HOSTS = ['*']
 
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -38,10 +37,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    #my apps
+    # my apps
     'gmailapp',
     'photos',
-    #allauth
+    # allauth
     "allauth_ui",
     'allauth',
     'allauth.account',
@@ -49,7 +48,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.google',
     "widget_tweaks",
     "slippers",
-    #https for local development
+    # https for local development
     'sslserver',
 
 ]
@@ -60,11 +59,18 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',  # Must be before custom middleware
+    # Must be before custom middleware
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+<<<<<<< HEAD
     
+=======
+    # 'gmailapp.middleware.SourceTokenRefreshMiddleware',
+    # 'photos.middleware.RefreshDestinationTokenMiddleware',
+
+>>>>>>> origin/main
 ]
 
 ROOT_URLCONF = 'codegeeks.urls'
@@ -72,7 +78,7 @@ ROOT_URLCONF = 'codegeeks.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR/ 'templates'],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -104,41 +110,39 @@ DATABASES = {
 }
 
 
-
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'SCOPE': [
-            'profile', 'email', 
-            'https://mail.google.com/',  
+            'profile', 'email',
+            'https://mail.google.com/',
             'https://www.googleapis.com/auth/photoslibrary',
             'https://www.googleapis.com/auth/photoslibrary.sharing',
             'https://www.googleapis.com/auth/drive.photos.readonly',
             'https://www.googleapis.com/auth/photoslibrary.edit.appcreateddata',
             'https://www.googleapis.com/auth/photoslibrary.appendonly',
             'https://www.googleapis.com/auth/photoslibrary.readonly.appcreateddata',
-            
 
-            ],
+
+        ],
 
         'AUTH_PARAMS': {
             'access_type': 'offline',
-            'prompt' : 'consent' 
+            'prompt': 'consent'
         },
         'OAUTH_PKCE_ENABLED': True,
         'APP': {
-              'client_id': config('client_id', cast=str),
-              'secret': config('client_secret', cast=str),
+            'client_id': config('client_id', cast=str),
+            'secret': config('client_secret', cast=str),
             'key': ''
         }
-    }   
-    
+    }
+
 }
 
 
 LOGIN_REDIRECT_URL = '/'
 # LOGIN_REDIRECT_URL = '/'  # Redirect after successful login
-LOGOUT_REDIRECT_URL = '/' 
-
+LOGOUT_REDIRECT_URL = '/'
 
 
 # Password validation
@@ -187,18 +191,17 @@ STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesSto
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
-#celery configrations :
+# celery configrations :
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-
 SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE =False
+CSRF_COOKIE_SECURE = False
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SECURE = True
 
-#configuration for celery redis message queue working in background for executing tasks defined in tasks module of both apps
-CELERY_BROKER_URL = 'redis://localhost:6379/0'  
+# configuration for celery redis message queue working in background for executing tasks defined in tasks module of both apps
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
@@ -210,24 +213,20 @@ CSRF_TRUSTED_ORIGINS = [
     'https://codemos-services.co.in',
 ]
 
-#smtp configurations
+# smtp configurations
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_HOST_USER = 'codegeek004@gmail.com'
-EMAIL_HOST_PASSWORD = config('gmail_app_password', cast=str) 
+EMAIL_HOST_PASSWORD = config('gmail_app_password', cast=str)
 
 EMAIL_PORT = 587
 
 
 ALLAUTH_UI_THEME = "dark"
 
-#custom user model
+# custom user model
 AUTH_USER_MODEL = 'gmailapp.CustomUser'
 
 USE_TZ = True
 TIME_ZONE = 'Asia/Kolkata'
-
-
-
-
