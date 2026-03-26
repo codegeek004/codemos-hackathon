@@ -32,7 +32,8 @@ def retrieve_credentials_for_user(user):
             user=user, provider="google")
 
         social_token = SocialToken.objects.get(account=social_account)
-        SCOPES = ['https://www.googleapis.com/auth/photoslibrary']
+        SCOPES = ['https://www.googleapis.com/auth/photoslibrary',
+                  'https://www.googleapis.com/auth/drive',]
 
         creds = Credentials(
             token=social_token.token,
@@ -62,6 +63,7 @@ def retrieve_credentials_for_user(user):
 
 
 def migrate_photos(request):
+    request.session['next'] = 'migrate_photos'
     if not request.user.is_authenticated:
         messages.error(
             request, "You are not logged in. Please login to continue.")
