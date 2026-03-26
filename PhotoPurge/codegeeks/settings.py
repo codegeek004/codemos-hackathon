@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 import os
 from pathlib import Path
-from decouple import config
+from decouple import config, Csv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -23,10 +23,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure--86oenvzrsktb1^m$w+f85we_z%#hc-kk9#-__h_)l0e&0h$q+'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG_MODE', cast=str)
 
-ALLOWED_HOSTS = ['*']
-
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv())
 
 # Application definition
 
@@ -40,6 +39,7 @@ INSTALLED_APPS = [
     # my apps
     'gmailapp',
     'photos',
+    'drive',
     # allauth
     "allauth_ui",
     'allauth',
@@ -96,11 +96,11 @@ WSGI_APPLICATION = 'codegeeks.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'photospurge',
-        'USER': 'root',
-        'PASSWORD': 'root',
-        'HOST': 'localhost',
-        'PORT': 3306,
+        'NAME': config('db_name', cast=str),
+        'USER': config('db_user', cast=str),
+        'PASSWORD': config('db_password', cast=str),
+        'HOST': config('db_host', cast=str),
+        'PORT': config('db_port', cast=int),
     }
 }
 
@@ -116,6 +116,14 @@ SOCIALACCOUNT_PROVIDERS = {
             'https://www.googleapis.com/auth/photoslibrary.edit.appcreateddata',
             'https://www.googleapis.com/auth/photoslibrary.appendonly',
             'https://www.googleapis.com/auth/photoslibrary.readonly.appcreateddata',
+            'https://www.googleapis.com/auth/drive.meet.readonly',
+            'https://www.googleapis.com/auth/drive.readonly',
+            'https://www.googleapis.com/auth/drive.metadata',
+            'https://www.googleapis.com/auth/drive.metadata.readonly',
+            'https://www.googleapis.com/auth/drive.apps',
+            'https://www.googleapis.com/auth/drive.apps.readonly',
+            'https://www.googleapis.com/auth/drive.photos.readonly',
+            'https://www.googleapis.com/auth/docs',
 
 
         ],
@@ -196,13 +204,13 @@ CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SECURE = True
 
 # configuration for celery redis message queue working in background for executing tasks defined in tasks module of both apps
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_BROKER_URL = config('celery_broker_url', cast=str)
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = config('celery_result_backend', cast=str)
 CELERY_TASK_TRACK_STARTED = True
-CELERY_TASK_TIME_LIMIT = 345600
-CELERY_TASK_SOFT_TIME_LIMIT = 345000
+CELERY_TASK_TIME_LIMIT = config('celery_task_time_limit', cast=int)
+CELERY_TASK_SOFT_TIME_LIMIT = config('celery_task_soft_limit', cast=int)
 
 CSRF_TRUSTED_ORIGINS = [
     'https://codemos-services.co.in',
