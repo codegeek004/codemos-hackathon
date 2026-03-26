@@ -8,23 +8,49 @@ FOLDER_MIME = "application/vnd.google-apps.folder"
 
 EXPORT_MAP = {
     "application/vnd.google-apps.document":
-        ("application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".docx"),
-    "application/vnd.oasis.opendocument.text"
-    "application/vnd.google-apps.spreadsheet":
-        ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx"),
+        [
+            ("application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".docx"),
+            ("application/vnd.oasis.opendocument.text", ".odt"),
+            ("application/rtf", ".rtf"),
+            ("application/pdf", ".pdf"),
+            ("text/plain", ".txt"),
+            ("application/zip", ".zip"),
+            ("application/epub+zip", ".epub"),
+            ("text/markdown", ".md")
+        ],
     "application/vnd.google-apps.presentation":
-        ("application/vnd.openxmlformats-officedocument.presentationml.presentation", ".pptx"),
+        [
+            ("application/vnd.openxmlformats-officedocument.presentationml.presentation", ".pptx"),
+            ("application/vnd.oasis.opendocument.presentation", ".odp"),
+            ("application/pdf", ".pdf"),
+            ("text/plain", ".txt"),
+            ("image/jpeg", ".jpg"),
+            ("image/png", ".png"),
+            ("image/svg+xml", ".svg")
+        ],
+    "application/vnd.google-apps.spreadsheet":
+        [
+            ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx"),
+            ("application/vnd.oasis.opendocument.spreadsheet", ".ods"),
+            ("application/pdf", ".pdf"),
+            ("application/zip", ".zip"),
+            ("text/csv", ".csv"),
+            ("text/tab-separated-values", ".tsv")
+        ],
     "application/vnd.google-apps.drawing":
-        ("application/pdf", ".pdf"),
+        [
+            ("application/pdf", ".pdf"),
+            ("image/jpeg", ".jpg"),
+            ("image/png", ".png"),
+            ("image/svg+xml", ".svg")
+        ],
+
     "application/vnd.google-apps.script":
         ("application/vnd.google-apps.script+json", ".json"),
     # Forms and Sites have no supported binary export — skip them downstream
     "application/vnd.google-apps.form": None,
     "application/vnd.google-apps.site": None,
 }
-
-
-SKIP_MIME_PREFIXES = ("application/vnd.google-apps.",)
 
 
 def get_drive_service(credentials_dict: dict):
@@ -64,76 +90,62 @@ def get_drive_files(
     return files, next_token
 
 
-def download_drive_file(
-        service,
-        file_id: str,
-        mime_type: str
-):
-    if mime_type in EXPORT_MAP:
-        export_target = EXPORT_MAP[mime_type]
-        if export_target is None:
-            # Forms / Sites / Maps — no binary export available
-            raise ValueError(f"No export available for mime type: {mime_type}")
-        export_mime, extension = export_target
-        # Correct API call: files().export_media() → GET /files/{id}/export?mimeType=...
-        request = service.files().export_media(fileId=file_id, mimeType=export_mime)
+def download_all_formats(src_service, file_id: str, file_name: str, mime_type: str):
 
-    elif mime_type.startswith("application/vnd.google-apps."):
-        # Catch-all for any other vnd.google-apps.* not in our map
-        raise ValueError(
-            f"Unsupported Google Workspace mime type: {mime_type}")
+    if mime_type not in EXPORT_MAP:
+        request = src_service.files().get_media(fileId=file_id)
+        buffer = io.BytesIO()
+        downloader = MediaIoBaseDownload(
+            buffer,
+            request,
+            chunksize=10 * 1024 * 1024)
+        done = False
+        while not done:
+            var, done = downloader.next_chunk()
+        return [(buffer.getvalue(), file_name, mime_type)]
 
-    else:
-        # Binary file — correct API call: files().get_media() → GET /files/{id}?alt=media
-        extension = None
-        request = service.files().get_media(fileId=file_id)
+    results = []
+    for export_mime, extension in EXPORT_MAP[mime_type]:
+        try:
+            request = src_service.files().export_media(
+                fileId=file_id, mimeType=export_mime)
+            buffer = io.BytesIO()
+            downloader = MediaIoBaseDownload(
+                buffer, request, chunksize=10 * 1024 * 1024)
+            done = False
+            while not done:
+                var, done = downloader.next_chunk()
 
-    buffer = io.BytesIO()
-    downloader = MediaIoBaseDownload(
-        buffer,
-        request,
-        chunksize=10 * 1024 * 1024)
+            file_bytes = buffer.getvalue()
+            if file_bytes:
+                results.append(
+                    (file_bytes, f"{file_name}{extension}", export_mime))
 
-    done = False
+        except Exception as e:
+            logger.warning(f"Could not export {file_name} as {extension}: {e}")
+            continue
 
-   while not done:
-        var, done = downloader.next_chunk()
-
-    return buffer.getvalue(), extension
+    return results
 
 
-def upload_drive_file(
-    service,
-    file_bytes: bytes,
-    file_name: str,
-    mime_type: str,
-    parent_folder_id: str = None,
-):
-    metadata = {"name": file_name}
-    if parent_folder_id:
-        metadata["parents"] = [parent_folder_id]
- 
-    # Workspace types were exported to Office format — use the Office MIME for upload.
-    # Binary files keep their original MIME.
-    if mime_type in EXPORT_MAP and EXPORT_MAP[mime_type] is not None:
-        upload_mime = EXPORT_MAP[mime_type][0]   # e.g. "application/vnd.openxmlformats-..."
-    else:
-        upload_mime = mime_type
- 
-    media = MediaIoBaseUpload(
-        io.BytesIO(file_bytes),
-        mimetype=upload_mime,
-        resumable=True,
-        chunksize=10 * 1024 * 1024,   # 10 MB chunks that matches download chunk size
-    )
-    uploaded = (
-        service.files().create(
-            body=metadata, 
-            media_body=media, 
-            fields="id"
-        ).execute()
-    )
-    return uploaded.get("id")    
+def upload_all_formats(dst_service, downloads: list, parent_folder_id: str = None):
+
+    uploaded = 0
+    for file_bytes, upload_name, upload_mime in downloads:
+        try:
+            upload_drive_file(
+                dst_service,
+                file_bytes=file_bytes,
+                file_name=upload_name,
+                mime_type=upload_mime,
+                parent_folder_id=parent_folder_id,
+            )
+            uploaded += 1
+        except Exception as e:
+            logger.warning(f"Could not upload {upload_name}: {e}")
+            continue
+
+    return uploaded
 
 
 def create_drive_folder(service, folder_name: str, parent_folder_id: str = None):
@@ -143,14 +155,13 @@ def create_drive_folder(service, folder_name: str, parent_folder_id: str = None)
     }
     if parent_folder_id:
         metadata["parents"] = [parent_folder_id]
- 
+
     folder = service.files().create(body=metadata, fields="id").execute()
     return folder.get("id")
 
 
 def trash_drive_file(service, file_id: str):
     service.files().update(
-            fileId=file_id, 
-            body={"trashed": True}
+        fileId=file_id,
+        body={"trashed": True}
     ).execute()
-print()
