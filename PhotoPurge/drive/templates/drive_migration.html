@@ -219,10 +219,12 @@
 <body>
 
     <h1>Google Drive Migration</h1>
-
-    <a href="{% url 'destination_google_auth' %}?next=migrate_drive">
-        <button class="auth-button">Please Authenticate Destination</button>
-    </a>
+    <div style="text-align: center; margin-top: 20px;">
+        <a href="{% url 'destination_google_auth' %}?next=migrate_drive">
+            <button class="auth-button" style="text-align: center;">Please
+                Authenticate Destination</button>
+        </a>
+    </div>
 
     {% if messages %}
     <div class="messages-container">
@@ -234,9 +236,9 @@
     </div>
     {% endif %}
 
-    {% if task_status %}
+    <!-- {% if task_status %}
     <div class="status-box">
-        <h3>Migration Status</h3>
+         <h3>Migration Status</h3>
         <span class="status-label status-{{ task_status.status }}">{{ task_status.status }}</span>
         <p class="progress-text">{{ task_status.migrated_count }} files migrated out of {{ task_status.total_count }}
         </p>
@@ -245,6 +247,7 @@
         {% endif %}
     </div>
     {% endif %}
+        -->
 
     <form method="POST" class="drive-form">
         {% csrf_token %}
