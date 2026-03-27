@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -152,38 +153,39 @@
         }
     </style>
 </head>
+
 <body>
 
     <h1>Google Photos Migration</h1>
 
-    <a href="{% url 'destination_google_auth' %}">
+    <a href="{% url 'destination_google_auth' %}?next=migrate_photos">
         <button class="auth-button"> Please Authenticate Destination</button>
     </a>
 
     {% if messages %}
-        <div class="messages-container">
-            <ul class="messages">
-                {% for message in messages %}
-                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    <div class="messages-container">
+        <ul class="messages">
+            {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}" {% endif %}>{{ message }}</li>
                 {% endfor %}
-            </ul>
-        </div>
+        </ul>
+    </div>
     {% endif %}
 
     {% if success_all %}
-        <p class="success-message">All photos have been successfully migrated!</p>
+    <p class="success-message">All photos have been successfully migrated!</p>
     {% elif success_selected %}
-        <p class="success-message">Selected photos have been successfully migrated!</p>
+    <p class="success-message">Selected photos have been successfully migrated!</p>
     {% endif %}
 
     <form method="POST" class="photo-form">
         {% csrf_token %}
         <div class="photo-grid">
             {% for photo in photos %}
-                <div class="photo-item">
-                    <input type="checkbox" name="selected_photos" value="{{ photo.id }}" class="photo-checkbox">
-                    <img src="{{ photo.baseUrl }}=s150" alt="{{ photo.filename }}" class="photo-image">
-                </div>
+            <div class="photo-item">
+                <input type="checkbox" name="selected_photos" value="{{ photo.id }}" class="photo-checkbox">
+                <img src="{{ photo.baseUrl }}=s150" alt="{{ photo.filename }}" class="photo-image">
+            </div>
             {% endfor %}
         </div>
         <div class="button-container">
@@ -192,8 +194,9 @@
     </form>
 
     {% if next_page_token %}
-        <a href="?page_token={{ next_page_token }}" class="next-page-button">Next Page</a>
+    <a href="?page_token={{ next_page_token }}" class="next-page-button">Next Page</a>
     {% endif %}
 
 </body>
+
 </html>

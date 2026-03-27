@@ -21,7 +21,8 @@ from gmailapp import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('gmail/', include('gmailapp.urls')),
-    path( 'photos/', include('photos.urls')),
+    path('photos/', include('photos.urls')),
+    path('drive/', include('drive.urls')),
     path('accounts/', include('allauth.urls')),
     path('', views.index_view, name='index'),
     path('privacy_policy/', views.privacy_policy_view, name='privacy_policy')

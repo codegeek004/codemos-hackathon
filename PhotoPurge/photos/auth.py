@@ -14,12 +14,10 @@ from django.utils.timezone import make_aware, is_naive, now
 from datetime import timezone
 from .models import *
 from django.contrib.auth import get_user_model
-
+from decouple import config
 user = get_user_model()
 
-# CLIENT_SECRETS_FILE = "credentials.json"
-# for local testing
-CLIENT_SECRETS_FILE = "credentials_local.json"
+CLIENT_SECRETS_FILE = config('CREDENTIALS_SECRET_FILE', cast=str)
 
 
 def get_google_auth_flow(redirect_uri):
@@ -31,6 +29,7 @@ def get_google_auth_flow(redirect_uri):
             'https://www.googleapis.com/auth/photoslibrary.appendonly',
             'https://www.googleapis.com/auth/userinfo.profile',
             'https://www.googleapis.com/auth/userinfo.email',
+            'https://www.googleapis.com/auth/drive',
             'openid'
         ],
         redirect_uri=redirect_uri
@@ -44,8 +43,7 @@ def destination_google_auth(request):
 
     # flow = get_google_auth_flow('https://codemos-services.co.in/photos/destination/auth/callback/')
     # for local testing
-    flow = get_google_auth_flow(
-        'https://127.0.0.1:8000/photos/destination/auth/callback/')
+    flow = get_google_auth_flow(config('CALLBACK_URL', cast=str))
     authorization_url, state = flow.authorization_url(
         access_type='offline', prompt='consent')
     return redirect(authorization_url)
@@ -59,8 +57,7 @@ def destination_google_auth_callback(request):
     # flow = get_google_auth_flow('https://codemos-services.co.in/photos/destination/auth/callback/')
     # for local testing
     try:
-        flow = get_google_auth_flow(
-            'https://127.0.0.1:8000/photos/destination/auth/callback/')
+        flow = get_google_auth_flow(config('CALLBACK_URL', cast=str))
         flow.fetch_token(authorization_response=request.build_absolute_uri())
         credentials = flow.credentials
         expires_at = credentials.expiry
@@ -117,7 +114,9 @@ def destination_google_auth_callback(request):
         user.save()
     except Exception as e:
         print(f'Error inserting userinfo into db exception {e}')
-    return redirect('migrate_photos')
+
+    next_url = request.session.get('next', 'migrate_photos')
+    return redirect(next_url)
 
 
 ##################### logout#######################
