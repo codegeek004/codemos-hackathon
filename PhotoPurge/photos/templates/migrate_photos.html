@@ -157,10 +157,11 @@
 <body>
 
     <h1>Google Photos Migration</h1>
-
-    <a href="{% url 'destination_google_auth' %}?next=migrate_photos">
-        <button class="auth-button"> Please Authenticate Destination</button>
-    </a>
+    <div style="text-align: center; margin-top: 20px;">
+        <a href="{% url 'destination_google_auth' %}?next=migrate_photos">
+            <button class="auth-button"> Please Authenticate Destination</button>
+        </a>
+    </div>
 
     {% if messages %}
     <div class="messages-container">
