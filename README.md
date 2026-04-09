@@ -68,11 +68,11 @@ The main challenge is that Google's APIs rate-limit aggressively, access tokens 
 Clone the repository and set up a virtual environment:
 
 ```bash
-git clone https://github.com/yourusername/PhotosPurge.git
+git clone https://github.com/codegeek004/codemos-hackathon.git
 cd PhotosPurge
 
 python -m venv venv
-source venv/bin/activate       # on Windows: venv\Scripts\activate
+source venv/bin/activate       
 
 pip install -r requirements.txt
 ```
@@ -129,10 +129,10 @@ celery -A codegeeks worker --loglevel=info
 Start the Django development server in another:
 
 ```bash
-python manage.py runserver
+python manage.py runsslserver
 ```
 
-Open `http://127.0.0.1:8000` in your browser, sign in with Google, and start a migration or cleanup task from the dashboard.
+Open `https://127.0.0.1:8000` in your browser, sign in with Google, and start a migration or cleanup task from the dashboard.
 
 ---
 
@@ -263,4 +263,4 @@ Please update tests where applicable.
 - [Google Drive API](https://developers.google.com/drive)
 - [Gmail API](https://developers.google.com/gmail/api)
 - [google-auth](https://github.com/googleapis/google-auth-library-python)
-- [Two Scoops of Django](https://www.feldroy.com/two-scoops-of-django)
+- [Two Scoops of Django](https://www.feldroy.com/two-scoops-of-django) 
